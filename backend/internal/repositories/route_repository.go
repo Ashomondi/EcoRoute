@@ -11,7 +11,7 @@ import (
 	"ecoroute/backend/internal/models"
 )
 
-const routeCols = `id, truck_id, ordered_point_ids, distance_km, estimated_fuel_l, estimated_minutes, status, created_at`
+const routeCols = `id, truck_id, ordered_point_ids, distance_km, baseline_distance_km, estimated_fuel_l, estimated_minutes, status, created_at`
 
 type RouteRepository struct {
 	pool *pgxpool.Pool
@@ -27,10 +27,10 @@ func (r *RouteRepository) Save(ctx context.Context, route *models.Route) error {
 		return err
 	}
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO routes (truck_id, ordered_point_ids, distance_km, estimated_fuel_l, estimated_minutes, status)
-		 VALUES ($1, $2, $3, $4, $5, $6)
+		`INSERT INTO routes (truck_id, ordered_point_ids, distance_km, baseline_distance_km, estimated_fuel_l, estimated_minutes, status)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 RETURNING id, created_at`,
-		route.TruckID, string(pointsJSON), route.DistanceKm, route.EstimatedFuelL, route.EstimatedMinutes, route.Status,
+		route.TruckID, string(pointsJSON), route.DistanceKm, route.BaselineDistanceKm, route.EstimatedFuelL, route.EstimatedMinutes, route.Status,
 	).Scan(&route.ID, &route.CreatedAt)
 }
 
@@ -73,7 +73,7 @@ func (r *RouteRepository) list(ctx context.Context, query string, args ...any) (
 func scanRoute(row pgx.Row) (*models.Route, error) {
 	route := &models.Route{}
 	var points []byte
-	err := row.Scan(&route.ID, &route.TruckID, &points, &route.DistanceKm, &route.EstimatedFuelL, &route.EstimatedMinutes, &route.Status, &route.CreatedAt)
+	err := row.Scan(&route.ID, &route.TruckID, &points, &route.DistanceKm, &route.BaselineDistanceKm, &route.EstimatedFuelL, &route.EstimatedMinutes, &route.Status, &route.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}

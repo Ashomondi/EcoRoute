@@ -9,14 +9,15 @@ const (
 )
 
 type Route struct {
-	ID               string    `json:"id"`
-	TruckID          string    `json:"truck_id"`
-	OrderedPointIDs  []string  `json:"ordered_point_ids"`
-	DistanceKm       float64   `json:"distance_km"`
-	EstimatedFuelL   float64   `json:"estimated_fuel_l"`
-	EstimatedMinutes int       `json:"estimated_minutes"`
-	Status           string    `json:"status"`
-	CreatedAt        time.Time `json:"created_at"`
+	ID                 string    `json:"id"`
+	TruckID            string    `json:"truck_id"`
+	OrderedPointIDs    []string  `json:"ordered_point_ids"`
+	DistanceKm         float64   `json:"distance_km"`
+	BaselineDistanceKm float64   `json:"baseline_distance_km"`
+	EstimatedFuelL     float64   `json:"estimated_fuel_l"`
+	EstimatedMinutes   int       `json:"estimated_minutes"`
+	Status             string    `json:"status"`
+	CreatedAt          time.Time `json:"created_at"`
 }
 
 type RouteStop struct {

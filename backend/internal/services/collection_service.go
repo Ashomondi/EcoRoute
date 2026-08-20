@@ -105,6 +105,7 @@ func (s *CollectionService) MarkCollected(ctx context.Context, userID, role, was
 		WastePointID: wastePointID,
 		TruckID:      truckID,
 		Outcome:      outcome,
+		EstimatedKg:  kgPerLevelPct * float64(wp.CurrentLevelPct),
 	}
 	if err := s.collection.Create(ctx, rec); err != nil {
 		return nil, err

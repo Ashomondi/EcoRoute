@@ -31,7 +31,7 @@ func NewAuthService(users *repositories.UserRepository, cfg *config.Config) *Aut
 }
 
 type AuthResult struct {
-	Token string      `json:"token"`
+	Token string       `json:"token"`
 	User  *models.User `json:"user"`
 }
 

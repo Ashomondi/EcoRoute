@@ -10,7 +10,7 @@ import (
 	"ecoroute/backend/internal/models"
 )
 
-const collectionCols = `id, route_id, waste_point_id, truck_id, outcome, collected_at`
+const collectionCols = `id, route_id, waste_point_id, truck_id, outcome, estimated_kg, collected_at`
 
 type CollectionRepository struct {
 	pool *pgxpool.Pool
@@ -22,10 +22,10 @@ func NewCollectionRepository(pool *pgxpool.Pool) *CollectionRepository {
 
 func (r *CollectionRepository) Create(ctx context.Context, rec *models.CollectionRecord) error {
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO collection_records (route_id, waste_point_id, truck_id, outcome)
-		 VALUES ($1, $2, $3, $4)
+		`INSERT INTO collection_records (route_id, waste_point_id, truck_id, outcome, estimated_kg)
+		 VALUES ($1, $2, $3, $4, $5)
 		 RETURNING id, collected_at`,
-		rec.RouteID, rec.WastePointID, rec.TruckID, rec.Outcome,
+		rec.RouteID, rec.WastePointID, rec.TruckID, rec.Outcome, rec.EstimatedKg,
 	).Scan(&rec.ID, &rec.CollectedAt)
 }
 
@@ -77,7 +77,7 @@ func (r *CollectionRepository) list(ctx context.Context, query string, args ...a
 	records := []models.CollectionRecord{}
 	for rows.Next() {
 		rec := &models.CollectionRecord{}
-		if err := rows.Scan(&rec.ID, &rec.RouteID, &rec.WastePointID, &rec.TruckID, &rec.Outcome, &rec.CollectedAt); err != nil {
+		if err := rows.Scan(&rec.ID, &rec.RouteID, &rec.WastePointID, &rec.TruckID, &rec.Outcome, &rec.EstimatedKg, &rec.CollectedAt); err != nil {
 			return nil, err
 		}
 		records = append(records, *rec)

@@ -13,5 +13,6 @@ type CollectionRecord struct {
 	WastePointID string    `json:"waste_point_id"`
 	TruckID      string    `json:"truck_id"`
 	Outcome      string    `json:"outcome"`
+	EstimatedKg  float64   `json:"estimated_kg"`
 	CollectedAt  time.Time `json:"collected_at"`
 }

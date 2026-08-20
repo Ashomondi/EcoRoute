@@ -20,7 +20,7 @@ const (
 )
 
 type RouteService struct {
-	repo  *repositories.RouteRepository
+	repo   *repositories.RouteRepository
 	trucks *repositories.TruckRepository
 	waste  *repositories.WasteRepository
 }
@@ -81,12 +81,13 @@ func (s *RouteService) OptimizeRoute(ctx context.Context, truckID string) (*mode
 	baseMinutes, baseFuel := estimateTimeFuel(baseDist, len(selected))
 
 	route := &models.Route{
-		TruckID:          truckID,
-		OrderedPointIDs:  pointIDs(optimized),
-		DistanceKm:       optDist,
-		EstimatedFuelL:   optFuel,
-		EstimatedMinutes: optMinutes,
-		Status:           models.RouteStatusPlanned,
+		TruckID:            truckID,
+		OrderedPointIDs:    pointIDs(optimized),
+		DistanceKm:         optDist,
+		BaselineDistanceKm: baseDist,
+		EstimatedFuelL:     optFuel,
+		EstimatedMinutes:   optMinutes,
+		Status:             models.RouteStatusPlanned,
 	}
 	if err := s.repo.Save(ctx, route); err != nil {
 		return nil, err

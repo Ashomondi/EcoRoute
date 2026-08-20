@@ -5,12 +5,14 @@ import PerformanceCard from '../../components/Dashboard/PerformanceCard'
 import { useAuth } from '../../hooks/useAuth'
 import { useWastePoints } from '../../hooks/useWastePoints'
 import { useCollections } from '../../hooks/useCollections'
+import { useReports } from '../../hooks/useReports'
 import { titleCase, timeAgo } from '../../utils/format'
 
 export default function CommunityDashboard() {
   const { user } = useAuth()
   const { points, loading: pointsLoading } = useWastePoints()
   const { summary, activity, loading: activityLoading } = useCollections()
+  const { reports, loading: reportsLoading } = useReports()
 
   return (
     <div>
@@ -68,6 +70,38 @@ export default function CommunityDashboard() {
                 <span style={{ flex: 1 }}>{titleCase(item.message)}</span>
                 <span className="muted" style={{ fontSize: 12 }}>
                   {timeAgo(item.time)}
+                </span>
+              </div>
+            ))
+          )}
+        </PerformanceCard>
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        <PerformanceCard title="Your reports">
+          {reportsLoading ? (
+            <div className="spinner" />
+          ) : reports.length === 0 ? (
+            <p className="empty">
+              You haven&apos;t made any reports yet.{' '}
+              <Link to="/community/report">Report your first issue</Link>.
+            </p>
+          ) : (
+            reports.map((r) => (
+              <div key={r.id} className="activity-item">
+                <span
+                  className="status-dot"
+                  style={{
+                    background:
+                      r.status === 'resolved' ? 'var(--success)' : 'var(--warning)',
+                  }}
+                />
+                <span style={{ flex: 1 }}>
+                  {titleCase(r.problem_type)} ·{' '}
+                  <span className={`badge badge-${r.priority}`}>{r.priority}</span>
+                </span>
+                <span className="muted" style={{ fontSize: 12 }}>
+                  {timeAgo(r.created_at)}
                 </span>
               </div>
             ))

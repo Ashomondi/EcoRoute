@@ -702,6 +702,19 @@ textarea:focus {
   }
 }
 
+.stop-list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.route-active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
 @media (max-width: 900px) {
   .shell {
     flex-direction: column;

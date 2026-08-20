@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"math"
+	"time"
 
 	"ecoroute/backend/internal/models"
 	"ecoroute/backend/internal/repositories"
@@ -24,10 +27,11 @@ func StatusForLevel(pct int) string {
 
 type WasteService struct {
 	repo *repositories.WasteRepository
+	ai   *AIClient
 }
 
-func NewWasteService(repo *repositories.WasteRepository) *WasteService {
-	return &WasteService{repo: repo}
+func NewWasteService(repo *repositories.WasteRepository, ai *AIClient) *WasteService {
+	return &WasteService{repo: repo, ai: ai}
 }
 
 func (s *WasteService) List(ctx context.Context) ([]models.WastePoint, error) {
@@ -41,6 +45,40 @@ func (s *WasteService) GetByID(ctx context.Context, id string) (*models.WastePoi
 	}
 	if wp == nil {
 		return nil, ErrNotFound
+	}
+	return wp, nil
+}
+
+func (s *WasteService) GetByIDWithPrediction(ctx context.Context, id string) (*models.WastePoint, error) {
+	wp, err := s.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if s.ai == nil {
+		return wp, nil
+	}
+
+	days := 30
+	if wp.LastCollectedAt != nil {
+		days = int(time.Since(*wp.LastCollectedAt).Hours() / 24)
+		if days < 0 {
+			days = 0
+		}
+	}
+
+	pred, err := s.ai.Predict(ctx, AIPredictionRequest{
+		WastePointID:            wp.ID,
+		CurrentLevelPct:         wp.CurrentLevelPct,
+		DaysSinceLastCollection: days,
+	})
+	if err != nil {
+		log.Printf("ai prediction unavailable for %s: %v", id, err)
+		return wp, nil
+	}
+
+	wp.Prediction = &models.AIPrediction{
+		PredictedLevelTomorrow: int(math.Round(pred.PredictedLevelTomorrow)),
+		RecommendCollect:       pred.RecommendCollect,
 	}
 	return wp, nil
 }

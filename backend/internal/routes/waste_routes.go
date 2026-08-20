@@ -11,7 +11,7 @@ import (
 func RegisterWaste(r *Router) {
 	deps := r.Deps()
 	repo := repositories.NewWasteRepository(deps.DB)
-	svc := services.NewWasteService(repo)
+	svc := services.NewWasteService(repo, services.NewAIClient(deps.Config))
 	h := handlers.NewWasteHandler(svc)
 
 	auth := middleware.RequireAuth(deps.Config)

@@ -28,7 +28,7 @@ func (h *WasteHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WasteHandler) Get(w http.ResponseWriter, r *http.Request) {
-	point, err := h.svc.GetByID(r.Context(), r.PathValue("id"))
+	point, err := h.svc.GetByIDWithPrediction(r.Context(), r.PathValue("id"))
 	if err != nil {
 		if errors.Is(err, services.ErrNotFound) {
 			utils.RespondError(w, http.StatusNotFound, "waste point not found")

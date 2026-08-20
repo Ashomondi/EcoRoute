@@ -50,6 +50,10 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+def create_server(host="0.0.0.0", port=8000):
+    return HTTPServer((host, port), Handler)
+
+
 if __name__ == "__main__":
     print("ai service listening on :8000")
-    HTTPServer(("0.0.0.0", 8000), Handler).serve_forever()
+    create_server().serve_forever()

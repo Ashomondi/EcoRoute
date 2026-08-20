@@ -48,5 +48,7 @@ func (r *Router) Deps() *Deps {
 }
 
 func (r *Router) Handler() http.Handler {
-	return middleware.CORS(middleware.Logging(middleware.Recovery(r.mux)))
+	return middleware.CORS(r.deps.Config.CORSAllowedOrigins,
+		middleware.RateLimit(r.deps.Config.RateLimitRequests, r.deps.Config.RateLimitWindow)(
+			middleware.Logging(middleware.Recovery(r.mux))))
 }

@@ -22,4 +22,5 @@ func RegisterWaste(r *Router) {
 	r.Handle("GET", "/waste-points/{id}", auth(readers(h.Get)))
 	r.Handle("POST", "/waste-points", auth(admin(h.Create)))
 	r.Handle("PUT", "/waste-points/{id}", auth(admin(h.Update)))
+	r.Handle("DELETE", "/waste-points/{id}", auth(admin(h.Delete)))
 }

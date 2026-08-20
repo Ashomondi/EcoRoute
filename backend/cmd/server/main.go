@@ -19,6 +19,7 @@ import (
 
 func main() {
 	migrateOnly := flag.Bool("migrate", false, "run migrations and exit")
+	seedData := flag.Bool("seed", false, "run migrations, seed demo data, and exit")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -39,6 +40,14 @@ func main() {
 
 	if err := migrations.Run(ctx, pool); err != nil {
 		log.Fatalf("migrations: %v", err)
+	}
+
+	if *seedData {
+		if err := Seed(ctx, pool); err != nil {
+			log.Fatalf("seed: %v", err)
+		}
+		log.Println("seed complete")
+		return
 	}
 
 	if *migrateOnly {

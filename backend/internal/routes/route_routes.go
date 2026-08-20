@@ -23,5 +23,6 @@ func RegisterRoutes(r *Router) {
 	r.Handle("POST", "/routes/optimize", auth(admin(h.Optimize)))
 	r.Handle("GET", "/routes", auth(adminDriver(h.List)))
 	r.Handle("GET", "/routes/{id}", auth(adminDriver(h.Get)))
+	r.Handle("GET", "/routes/{id}/stops", auth(adminDriver(h.GetStops)))
 	r.Handle("PUT", "/routes/{id}/status", auth(adminDriver(h.UpdateStatus)))
 }

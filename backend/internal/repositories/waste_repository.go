@@ -52,6 +52,29 @@ func (r *WasteRepository) GetByID(ctx context.Context, id string) (*models.Waste
 		`SELECT `+wastePointCols+` FROM waste_points WHERE id = $1`, id))
 }
 
+func (r *WasteRepository) GetMany(ctx context.Context, ids []string) (map[string]models.WastePoint, error) {
+	byID := map[string]models.WastePoint{}
+	if len(ids) == 0 {
+		return byID, nil
+	}
+
+	rows, err := r.pool.Query(ctx,
+		`SELECT `+wastePointCols+` FROM waste_points WHERE id::text = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		wp, err := scanWastePoint(rows)
+		if err != nil {
+			return nil, err
+		}
+		byID[wp.ID] = *wp
+	}
+	return byID, rows.Err()
+}
+
 func (r *WasteRepository) ResetCollected(ctx context.Context, id string) error {
 	_, err := r.pool.Exec(ctx,
 		`UPDATE waste_points SET current_level_pct = 0, status = $1, last_collected_at = now() WHERE id = $2`,

@@ -149,6 +149,28 @@ func (s *RouteService) GetByID(ctx context.Context, id string) (*models.Route, e
 	return route, nil
 }
 
+func (s *RouteService) GetStops(ctx context.Context, routeID string) ([]models.RouteStop, error) {
+	route, err := s.GetByID(ctx, routeID)
+	if err != nil {
+		return nil, err
+	}
+
+	byID, err := s.waste.GetMany(ctx, route.OrderedPointIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	stops := make([]models.RouteStop, 0, len(route.OrderedPointIDs))
+	for i, id := range route.OrderedPointIDs {
+		wp, ok := byID[id]
+		if !ok {
+			continue
+		}
+		stops = append(stops, models.RouteStop{Order: i + 1, WastePoint: wp})
+	}
+	return stops, nil
+}
+
 func (s *RouteService) UpdateStatus(ctx context.Context, userID, role, id, status string) (*models.Route, error) {
 	route, err := s.GetByID(ctx, id)
 	if err != nil {

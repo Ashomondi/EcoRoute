@@ -1,0 +1,8 @@
+# EcoRoute AI service — stdlib only (no external dependencies).
+#
+# Run the prediction API:
+#   python3 services/api.py      (HTTP on 0.0.0.0:8000)
+#   python3 main.py              (equivalent entry point)
+#
+# Offline training (optional, rewrites models/fill_rate.json):
+#   python3 data/train.py

@@ -34,6 +34,7 @@ func NewRouter(deps *Deps) *Router {
 	RegisterRoutes(r)
 	RegisterReports(r)
 	RegisterAnalytics(r)
+	RegisterCommunity(r)
 
 	return r
 }

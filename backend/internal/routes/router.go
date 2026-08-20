@@ -28,6 +28,7 @@ func NewRouter(deps *Deps) *Router {
 	})
 
 	RegisterAuth(r)
+	RegisterWaste(r)
 
 	return r
 }

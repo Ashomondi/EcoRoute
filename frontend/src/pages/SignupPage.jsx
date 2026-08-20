@@ -26,7 +26,7 @@ export default function SignupPage() {
     }
     setBusy(true)
     try {
-      const user = await register({ name, email, password, role })
+      await register({ name, email, password, role })
       navigate(role === 'driver' ? '/driver' : '/community')
     } catch (err) {
       setError(err.message)

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, createElement, useCallback, useContext, useMemo, useState } from 'react'
 import {
   login as apiLogin,
   register as apiRegister,
@@ -17,11 +17,6 @@ export function AuthProvider({ children }) {
       return null
     }
   })
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    setLoading(false)
-  }, [])
 
   const persist = useCallback((u) => {
     setUser(u)
@@ -56,11 +51,11 @@ export function AuthProvider({ children }) {
   }, [persist])
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout }),
-    [user, loading, login, register, logout],
+    () => ({ user, login, register, logout }),
+    [user, login, register, logout],
   )
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return createElement(AuthContext.Provider, { value }, children)
 }
 
 export function useAuth() {

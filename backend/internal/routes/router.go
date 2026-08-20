@@ -35,6 +35,12 @@ func NewRouter(deps *Deps) *Router {
 	RegisterReports(r)
 	RegisterAnalytics(r)
 	RegisterCommunity(r)
+	RegisterUploads(r)
+
+	if deps.Config.UploadDir != "" && deps.Config.UploadURL != "" {
+		fs := http.StripPrefix(deps.Config.UploadURL, http.FileServer(http.Dir(deps.Config.UploadDir)))
+		r.mux.Handle(deps.Config.UploadURL+"/", fs)
+	}
 
 	return r
 }

@@ -38,6 +38,10 @@ func main() {
 		log.Fatalf("db ping: %v", err)
 	}
 
+	if err := os.MkdirAll(cfg.UploadDir, 0o755); err != nil {
+		log.Fatalf("upload dir: %v", err)
+	}
+
 	if err := migrations.Run(ctx, pool); err != nil {
 		log.Fatalf("migrations: %v", err)
 	}

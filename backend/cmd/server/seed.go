@@ -14,13 +14,13 @@ import (
 )
 
 func Seed(ctx context.Context, pool *pgxpool.Pool) error {
-	if err := seedUser(ctx, pool, "admin@ecoroute.dev", "admin123", models.RoleAdmin); err != nil {
+	if err := seedUser(ctx, pool, "admin@ecoroute.dev", "admin123", models.RoleAdmin, "Admin"); err != nil {
 		return err
 	}
-	if err := seedUser(ctx, pool, "driver@ecoroute.dev", "driver123", models.RoleDriver); err != nil {
+	if err := seedUser(ctx, pool, "driver@ecoroute.dev", "driver123", models.RoleDriver, "Driver"); err != nil {
 		return err
 	}
-	if err := seedUser(ctx, pool, "community@ecoroute.dev", "community123", models.RoleCommunity); err != nil {
+	if err := seedUser(ctx, pool, "community@ecoroute.dev", "community123", models.RoleCommunity, "Resident"); err != nil {
 		return err
 	}
 	log.Println("seed: users ok")
@@ -77,7 +77,7 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 	return nil
 }
 
-func seedUser(ctx context.Context, pool *pgxpool.Pool, email, password string, role models.Role) error {
+func seedUser(ctx context.Context, pool *pgxpool.Pool, email, password string, role models.Role, name string) error {
 	var exists bool
 	if err := pool.QueryRow(ctx,
 		`SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)`, email).Scan(&exists); err != nil {
@@ -92,7 +92,8 @@ func seedUser(ctx context.Context, pool *pgxpool.Pool, email, password string, r
 		return err
 	}
 	_, err = pool.Exec(ctx,
-		`INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)`, email, hash, role)
+		`INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4)`,
+		name, email, hash, role)
 	return err
 }
 

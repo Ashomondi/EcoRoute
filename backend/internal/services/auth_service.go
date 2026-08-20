@@ -65,7 +65,7 @@ func (s *AuthService) Register(ctx context.Context, in models.RegisterInput) (*A
 		return nil, err
 	}
 
-	u := &models.User{Email: email, PasswordHash: hash, Role: role}
+	u := &models.User{Name: strings.TrimSpace(in.Name), Email: email, PasswordHash: hash, Role: role}
 	if err := s.users.Create(ctx, u); err != nil {
 		if isUniqueViolation(err) {
 			return nil, ErrEmailExists

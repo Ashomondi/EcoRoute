@@ -106,6 +106,17 @@ func (s *TruckService) AssignDriver(ctx context.Context, truckID string, driverI
 	return s.repo.SetDriver(ctx, truckID, driverID)
 }
 
+func (s *TruckService) Delete(ctx context.Context, id string) error {
+	truck, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if truck == nil {
+		return ErrNotFound
+	}
+	return s.repo.Delete(ctx, id)
+}
+
 func (s *TruckService) validateDriver(ctx context.Context, driverID string) error {
 	u, err := s.users.GetByID(ctx, driverID)
 	if err != nil {

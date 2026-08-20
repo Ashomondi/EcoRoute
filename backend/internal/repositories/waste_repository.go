@@ -98,6 +98,11 @@ func (r *WasteRepository) Update(ctx context.Context, wp *models.WastePoint) (*m
 		wp.ID, wp.Name, wp.Latitude, wp.Longitude, wp.CurrentLevelPct, wp.Status))
 }
 
+func (r *WasteRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM waste_points WHERE id = $1`, id)
+	return err
+}
+
 func scanWastePoint(row pgx.Row) (*models.WastePoint, error) {
 	wp := &models.WastePoint{}
 	err := row.Scan(&wp.ID, &wp.Name, &wp.Latitude, &wp.Longitude, &wp.CurrentLevelPct, &wp.Status, &wp.LastCollectedAt, &wp.CreatedAt)

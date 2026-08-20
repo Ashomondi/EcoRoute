@@ -6,6 +6,7 @@ import (
 
 	"ecoroute/backend/internal/models"
 	"ecoroute/backend/internal/repositories"
+	"ecoroute/backend/internal/utils"
 )
 
 type ReportService struct {
@@ -68,6 +69,35 @@ func (s *ReportService) List(ctx context.Context, status string) ([]models.Waste
 
 func (s *ReportService) ListForUser(ctx context.Context, userID string) ([]models.WasteReport, error) {
 	return s.repo.ListByUser(ctx, userID)
+}
+
+func (s *ReportService) UpdateStatus(ctx context.Context, id, status string) (*models.WasteReport, error) {
+	if !utils.In(status, models.ReportStatusOpen, models.ReportStatusInProgress, models.ReportStatusResolved) {
+		return nil, fmt.Errorf("%w: invalid report status", ErrValidation)
+	}
+	rep, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if rep == nil {
+		return nil, ErrNotFound
+	}
+	if err := s.repo.UpdateStatus(ctx, id, status); err != nil {
+		return nil, err
+	}
+	rep.Status = status
+	return rep, nil
+}
+
+func (s *ReportService) Delete(ctx context.Context, id string) error {
+	rep, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if rep == nil {
+		return ErrNotFound
+	}
+	return s.repo.Delete(ctx, id)
 }
 
 func priorityFor(problemType string) string {

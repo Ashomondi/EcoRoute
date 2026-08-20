@@ -21,4 +21,6 @@ func RegisterReports(r *Router) {
 	r.Handle("POST", "/reports", auth(h.Create))
 	r.Handle("GET", "/reports", auth(admin(h.List)))
 	r.Handle("GET", "/reports/mine", auth(h.ListMine))
+	r.Handle("PUT", "/reports/{id}/status", auth(admin(h.UpdateStatus)))
+	r.Handle("DELETE", "/reports/{id}", auth(admin(h.Delete)))
 }

@@ -106,3 +106,15 @@ func (h *TruckHandler) AssignDriver(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.RespondData(w, http.StatusOK, truck)
 }
+
+func (h *TruckHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	if err := h.svc.Delete(r.Context(), r.PathValue("id")); err != nil {
+		if errors.Is(err, services.ErrNotFound) {
+			utils.RespondError(w, http.StatusNotFound, "truck not found")
+			return
+		}
+		utils.RespondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

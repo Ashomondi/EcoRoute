@@ -2,8 +2,8 @@
 """EcoRoute AI prediction service — /predict contract.
 
 Thin, stateless HTTP layer that the Go backend (waste_service.go) calls for
-waste-level forecasting. MVP model: linear fill-rate extrapolation.
-Runs on stdlib only so it needs no pip install.
+waste-level forecasting. Prediction logic lives in predictor.py; the model is
+trained offline by data/train.py. Runs on stdlib only.
 
 Usage:
     python3 ai/services/api.py
@@ -11,20 +11,13 @@ Usage:
 """
 
 import json
+import os
+import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-COLLECT_THRESHOLD_PCT = 85.0
-FILL_RATE_PER_DAY_PCT = 3.0
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-
-def predict(payload):
-    level = int(payload.get("current_level_pct", 0))
-    days = int(payload.get("days_since_last_collection", 1))
-    predicted = min(100.0, level + FILL_RATE_PER_DAY_PCT * days)
-    return {
-        "predicted_level_tomorrow": round(predicted, 1),
-        "recommend_collect": predicted >= COLLECT_THRESHOLD_PCT,
-    }
+from predictor import predict  # noqa: E402
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -37,7 +30,11 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         try:
             payload = json.loads(self.rfile.read(length) or b"{}")
-            body = json.dumps(predict(payload)).encode()
+            result = predict(
+                int(payload.get("current_level_pct", 0)),
+                int(payload.get("days_since_last_collection", 1)),
+            )
+            body = json.dumps(result).encode()
             status = 200
         except (ValueError, TypeError):
             body = json.dumps({"error": "invalid payload"}).encode()
@@ -54,6 +51,5 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    server = HTTPServer(("0.0.0.0", 8000), Handler)
     print("ai service listening on :8000")
-    server.serve_forever()
+    HTTPServer(("0.0.0.0", 8000), Handler).serve_forever()

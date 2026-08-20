@@ -24,4 +24,5 @@ func RegisterTrucks(r *Router) {
 	r.Handle("POST", "/trucks", auth(admin(h.Create)))
 	r.Handle("PUT", "/trucks/{id}", auth(admin(h.Update)))
 	r.Handle("PUT", "/trucks/{id}/driver", auth(admin(h.AssignDriver)))
+	r.Handle("DELETE", "/trucks/{id}", auth(admin(h.Delete)))
 }

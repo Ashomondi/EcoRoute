@@ -35,6 +35,12 @@ func NewRouter(deps *Deps) *Router {
 	RegisterReports(r)
 	RegisterAnalytics(r)
 	RegisterCommunity(r)
+	RegisterUploads(r)
+
+	if deps.Config.UploadDir != "" && deps.Config.UploadURL != "" {
+		fs := http.StripPrefix(deps.Config.UploadURL, http.FileServer(http.Dir(deps.Config.UploadDir)))
+		r.mux.Handle(deps.Config.UploadURL+"/", fs)
+	}
 
 	return r
 }
@@ -48,5 +54,7 @@ func (r *Router) Deps() *Deps {
 }
 
 func (r *Router) Handler() http.Handler {
-	return middleware.CORS(middleware.Logging(middleware.Recovery(r.mux)))
+	return middleware.CORS(r.deps.Config.CORSAllowedOrigins,
+		middleware.RateLimit(r.deps.Config.RateLimitRequests, r.deps.Config.RateLimitWindow)(
+			middleware.Logging(middleware.Recovery(r.mux))))
 }

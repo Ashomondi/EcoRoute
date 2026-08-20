@@ -80,3 +80,15 @@ func (h *WasteHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.RespondData(w, http.StatusOK, point)
 }
+
+func (h *WasteHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	if err := h.svc.Delete(r.Context(), r.PathValue("id")); err != nil {
+		if errors.Is(err, services.ErrNotFound) {
+			utils.RespondError(w, http.StatusNotFound, "waste point not found")
+			return
+		}
+		utils.RespondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

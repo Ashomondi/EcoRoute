@@ -52,6 +52,13 @@ func (r *WasteRepository) GetByID(ctx context.Context, id string) (*models.Waste
 		`SELECT `+wastePointCols+` FROM waste_points WHERE id = $1`, id))
 }
 
+func (r *WasteRepository) ResetCollected(ctx context.Context, id string) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE waste_points SET current_level_pct = 0, status = $1, last_collected_at = now() WHERE id = $2`,
+		models.StatusOK, id)
+	return err
+}
+
 func (r *WasteRepository) Update(ctx context.Context, wp *models.WastePoint) (*models.WastePoint, error) {
 	return scanWastePoint(r.pool.QueryRow(ctx,
 		`UPDATE waste_points

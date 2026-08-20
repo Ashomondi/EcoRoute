@@ -29,6 +29,8 @@ func NewRouter(deps *Deps) *Router {
 
 	RegisterAuth(r)
 	RegisterWaste(r)
+	RegisterTrucks(r)
+	RegisterCollections(r)
 
 	return r
 }

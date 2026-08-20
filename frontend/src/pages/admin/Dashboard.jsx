@@ -1,14 +1,37 @@
+import { useCallback, useEffect, useState } from 'react'
 import WasteMap from '../../components/Map/WasteMap'
 import StatCard from '../../components/Dashboard/StatCard'
 import PerformanceCard from '../../components/Dashboard/PerformanceCard'
 import { useWastePoints } from '../../hooks/useWastePoints'
 import { useTrucks } from '../../hooks/useTrucks'
 import { useAnalytics } from '../../hooks/useAnalytics'
+import { api } from '../../services/apiClient'
+import { titleCase } from '../../utils/format'
+
+function useOpenReports() {
+  const [reports, setReports] = useState([])
+  const [loading, setLoading] = useState(true)
+  const refetch = useCallback(async () => {
+    setLoading(true)
+    try {
+      setReports(await api.get('/reports?status=open'))
+    } catch {
+      setReports([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+  useEffect(() => {
+    refetch()
+  }, [refetch])
+  return { reports, loading, refetch }
+}
 
 export default function Dashboard() {
   const { points, loading: pointsLoading, error: pointsError } = useWastePoints()
   const { trucks, loading: trucksLoading } = useTrucks()
   const { summary, loading: summaryLoading } = useAnalytics()
+  const { reports, loading: reportsLoading } = useOpenReports()
 
   const critical = points.filter((p) => p.status === 'critical').length
   const activeTrucks = trucks.filter((t) => t.status === 'en_route').length
@@ -76,6 +99,66 @@ export default function Dashboard() {
                 </div>
               ))
           )}
+        </PerformanceCard>
+      </div>
+
+      <div className="grid cols-2" style={{ marginTop: 16 }}>
+        <PerformanceCard title="Live community reports">
+          {reportsLoading ? (
+            <p className="muted">Loading…</p>
+          ) : reports.length === 0 ? (
+            <p className="empty">No open reports right now.</p>
+          ) : (
+            reports.slice(0, 6).map((r) => (
+              <div key={r.id} className="activity-item">
+                <span
+                  className="status-dot"
+                  style={{ background: r.priority === 'high' ? 'var(--danger)' : 'var(--warning)' }}
+                />
+                <span style={{ flex: 1 }}>
+                  {titleCase(r.problem_type)}
+                  {r.waste_point_id ? ' · linked to a point' : ''}
+                </span>
+                <span className={`badge badge-${r.priority}`}>{r.priority}</span>
+              </div>
+            ))
+          )}
+        </PerformanceCard>
+
+        <PerformanceCard title="Collection trend">
+          <p className="muted" style={{ marginBottom: 8 }}>
+            {summaryLoading ? 'Loading…' : `${summary?.collected_today ?? 0} collection(s) today.`}
+          </p>
+          <div className="compare-bar">
+            <div className="compare-row">
+              <span className="row-label">Collected</span>
+              <div className="compare-track">
+                <div
+                  style={{
+                    width: '100%',
+                    background: 'var(--primary)',
+                  }}
+                />
+              </div>
+              <span className="row-value">
+                {summaryLoading ? '…' : (summary?.collected_today_kg ?? 0).toFixed(0)} kg
+              </span>
+            </div>
+            <div className="compare-row">
+              <span className="row-label">Rate</span>
+              <div className="compare-track">
+                <div
+                  style={{
+                    width: `${summary?.collection_rate_pct ?? 0}%`,
+                    background: 'var(--success)',
+                  }}
+                />
+              </div>
+              <span className="row-value">
+                {summaryLoading ? '…' : (summary?.collection_rate_pct ?? 0).toFixed(0)}%
+              </span>
+            </div>
+          </div>
         </PerformanceCard>
       </div>
     </div>

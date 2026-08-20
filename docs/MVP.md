@@ -16,9 +16,9 @@ Goal: a working, demoable smart waste management platform that monitors collecti
 | P1 | Community waste reporting + priority escalation | ✅ |
 | P1 | Analytics dashboard (impact, distance/fuel/CO₂) | ✅ |
 | P1 | Community portal (impact cards, schedule, activity feed) | ✅ |
-| P2 | AI fill-level prediction (graceful degradation) | ✅ (stub model) |
-| P2 | Photo upload storage | ⏳ real upload endpoint |
-| P2 | Historical analytics trends | ⏳ trend endpoint |
+| P2 | AI fill-level prediction (graceful degradation) | ✅ real model + trained params |
+| P2 | Photo upload storage | ✅ POST /uploads + static serving |
+| P2 | Historical analytics trends | ✅ GET /analytics/trend |
 
 ## Demo journey (pitch script)
 

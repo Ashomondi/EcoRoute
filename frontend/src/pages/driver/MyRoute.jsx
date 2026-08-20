@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import WasteMap from '../../components/Map/WasteMap'
+import RouteSummary from '../../components/Routes/RouteSummary'
 import { useRoutes } from '../../hooks/useRoutes'
 import { getRouteStops, updateRouteStatus } from '../../services/routeService'
 import { markCollected } from '../../services/collectionService'
@@ -103,10 +104,11 @@ export default function MyRoute() {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h3>
-          {stops.length} stops · {route.distance_km.toFixed(1)} km · ~{route.estimated_minutes} min
+        <h3 style={{ marginBottom: 12 }}>
+          {stops.length} stops · {titleCase(route.status)}
         </h3>
-        <p className="muted" style={{ marginTop: 4 }}>
+        <RouteSummary route={route} />
+        <p className="muted" style={{ marginTop: 12 }}>
           Progress: {done} of {stops.length} collected
           {remainingKm > 0 ? ` · ~${remainingKm.toFixed(1)} km left` : ''}
         </p>

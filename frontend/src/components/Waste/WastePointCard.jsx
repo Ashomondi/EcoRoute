@@ -1,4 +1,5 @@
 import WasteLevelIndicator from './WasteLevelIndicator'
+import WasteStatus from '../Dashboard/WasteStatus'
 
 export default function WastePointCard({ point, onSelect }) {
   return (
@@ -9,7 +10,7 @@ export default function WastePointCard({ point, onSelect }) {
     >
       <div className="card-head">
         <h3>{point.name}</h3>
-        <span className={`badge badge-${point.status}`}>{point.status}</span>
+        <WasteStatus status={point.status} />
       </div>
       <p className="muted">{point.current_level_pct}% full</p>
       <WasteLevelIndicator level={point.current_level_pct} status={point.status} />

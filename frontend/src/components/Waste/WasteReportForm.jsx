@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import { PROBLEM_TYPES } from '../../utils/constants'
 import { validateReport } from '../../utils/validators'
+import { uploadPhoto } from '../../services/reportService'
 
 export default function WasteReportForm({ wastePoints = [], onSubmit, busy }) {
   const [problemType, setProblemType] = useState('')
   const [description, setDescription] = useState('')
-  const [photo, setPhoto] = useState('')
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState('')
   const [wastePointId, setWastePointId] = useState('')
   const [locationNote, setLocationNote] = useState('')
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!navigator.geolocation || wastePoints.length === 0) {
@@ -41,12 +44,11 @@ export default function WasteReportForm({ wastePoints = [], onSubmit, busy }) {
     if (!file) {
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => setPhoto(String(reader.result))
-    reader.readAsDataURL(file)
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
   }
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
     const err = validateReport({ problemType, description })
     if (err) {
@@ -54,12 +56,23 @@ export default function WasteReportForm({ wastePoints = [], onSubmit, busy }) {
       return
     }
     setError('')
-    onSubmit({
-      problem_type: problemType,
-      description,
-      photo_url: photo || null,
-      waste_point_id: wastePointId || null,
-    })
+    setSaving(true)
+    try {
+      let photoUrl = null
+      if (photoFile) {
+        photoUrl = await uploadPhoto(photoFile)
+      }
+      await onSubmit({
+        problem_type: problemType,
+        description,
+        photo_url: photoUrl,
+        waste_point_id: wastePointId || null,
+      })
+    } catch (submitErr) {
+      setError(submitErr.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -117,13 +130,13 @@ export default function WasteReportForm({ wastePoints = [], onSubmit, busy }) {
       <div className="field">
         <label>Photo</label>
         <input className="input" type="file" accept="image/*" onChange={onPhoto} />
-        {photo && <img src={photo} alt="attachment preview" className="photo-preview" />}
+        {photoPreview && <img src={photoPreview} alt="attachment preview" className="photo-preview" />}
       </div>
 
       {error && <p className="error">{error}</p>}
 
-      <button className="btn btn-primary btn-block" type="submit" disabled={busy}>
-        {busy ? 'Submitting…' : 'Submit Report'}
+      <button className="btn btn-primary btn-block" type="submit" disabled={busy || saving}>
+        {saving ? 'Uploading…' : 'Submit Report'}
       </button>
     </form>
   )

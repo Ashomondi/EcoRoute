@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import RouteCard from '../../components/Routes/RouteCard'
 import OptimizationResult from '../../components/Routes/OptimizationResult'
+import WasteMap from '../../components/Map/WasteMap'
 import { useTrucks } from '../../hooks/useTrucks'
 import { useRoutes } from '../../hooks/useRoutes'
 
@@ -67,6 +68,16 @@ export default function Routes() {
       </div>
 
       {result && <OptimizationResult result={result} />}
+
+      {result && result.stops.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <WasteMap
+            points={result.stops.map((s) => s.waste_point)}
+            route={result.stops.map((s) => s.waste_point)}
+            height="360px"
+          />
+        </div>
+      )}
 
       <div style={{ marginTop: 20 }}>
         <h3 style={{ marginBottom: 12 }}>Saved routes</h3>

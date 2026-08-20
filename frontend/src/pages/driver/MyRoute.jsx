@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react'
+import WasteMap from '../../components/Map/WasteMap'
 import { useRoutes } from '../../hooks/useRoutes'
 import { getRouteStops, updateRouteStatus } from '../../services/routeService'
 import { markCollected } from '../../services/collectionService'
 import { titleCase } from '../../utils/format'
+
+function haversineKm(a, b) {
+  const toRad = Math.PI / 180
+  const dLat = (b.latitude - a.latitude) * toRad
+  const dLng = (b.longitude - a.longitude) * toRad
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(a.latitude * toRad) * Math.cos(b.latitude * toRad) * Math.sin(dLng / 2) ** 2
+  return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
+}
 
 export default function MyRoute() {
   const { routes, loading, refetch } = useRoutes()
@@ -74,11 +85,14 @@ export default function MyRoute() {
   }
 
   if (!route) {
-    return (
-      <p className="empty">
-        No route assigned yet. Ask an admin to optimize a route for your truck.
-      </p>
-    )
+    return <p className="empty">No route assigned yet. Ask an admin to optimize a route for your truck.</p>
+  }
+
+  const done = stops.filter((s) => collected[s.waste_point.id] === 'collected').length
+  const remainingStops = stops.filter((s) => collected[s.waste_point.id] !== 'collected')
+  let remainingKm = 0
+  for (let i = 0; i < remainingStops.length - 1; i++) {
+    remainingKm += haversineKm(remainingStops[i].waste_point, remainingStops[i + 1].waste_point)
   }
 
   return (
@@ -92,6 +106,10 @@ export default function MyRoute() {
         <h3>
           {stops.length} stops · {route.distance_km.toFixed(1)} km · ~{route.estimated_minutes} min
         </h3>
+        <p className="muted" style={{ marginTop: 4 }}>
+          Progress: {done} of {stops.length} collected
+          {remainingKm > 0 ? ` · ~${remainingKm.toFixed(1)} km left` : ''}
+        </p>
         {route.status === 'planned' && (
           <button className="btn btn-primary" type="button" style={{ marginTop: 12 }} disabled={busy} onClick={() => setStatus('active')}>
             Start Route
@@ -107,6 +125,12 @@ export default function MyRoute() {
       {msg && <p className="muted" style={{ marginBottom: 8 }}>{msg}</p>}
       {err && <p className="error" style={{ marginBottom: 8 }}>{err}</p>}
 
+      {stops.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <WasteMap points={stops.map((s) => s.waste_point)} route={stops.map((s) => s.waste_point)} height="300px" />
+        </div>
+      )}
+
       {stops.length === 0 ? (
         <p className="empty">This route has no stops.</p>
       ) : (
@@ -117,28 +141,16 @@ export default function MyRoute() {
                 <h3>
                   {s.order}. {s.waste_point.name}
                 </h3>
-                <span className={`badge badge-${s.waste_point.status}`}>
-                  {titleCase(s.waste_point.status)}
-                </span>
+                <span className={`badge badge-${s.waste_point.status}`}>{titleCase(s.waste_point.status)}</span>
               </div>
               <p className="muted">Fill level: {s.waste_point.current_level_pct}%</p>
 
               {route.status === 'active' && !collected[s.waste_point.id] && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                  <button
-                    className="btn btn-primary"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => mark(s.waste_point.id, 'collected')}
-                  >
+                  <button className="btn btn-primary" type="button" disabled={busy} onClick={() => mark(s.waste_point.id, 'collected')}>
                     Mark Collected
                   </button>
-                  <button
-                    className="btn btn-outline"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => mark(s.waste_point.id, 'failed')}
-                  >
+                  <button className="btn btn-outline" type="button" disabled={busy} onClick={() => mark(s.waste_point.id, 'failed')}>
                     Report Problem
                   </button>
                 </div>

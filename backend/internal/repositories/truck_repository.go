@@ -83,6 +83,11 @@ func (r *TruckRepository) SetStatus(ctx context.Context, truckID, status string)
 	return err
 }
 
+func (r *TruckRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM trucks WHERE id = $1`, id)
+	return err
+}
+
 func scanTruck(row pgx.Row) (*models.Truck, error) {
 	t := &models.Truck{}
 	err := row.Scan(&t.ID, &t.RegistrationNumber, &t.CapacityKg, &t.DriverID, &t.CurrentLat, &t.CurrentLng, &t.Status, &t.CreatedAt)

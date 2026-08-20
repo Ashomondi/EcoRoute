@@ -132,6 +132,17 @@ func (s *WasteService) Update(ctx context.Context, id string, in models.WastePoi
 	})
 }
 
+func (s *WasteService) Delete(ctx context.Context, id string) error {
+	existing, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return ErrNotFound
+	}
+	return s.repo.Delete(ctx, id)
+}
+
 func validateWastePointInput(name string, lat, lng float64, level int) error {
 	if name == "" {
 		return fmt.Errorf("%w: name is required", ErrValidation)

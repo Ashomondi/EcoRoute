@@ -71,3 +71,41 @@ func (h *ReportHandler) ListMine(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.RespondData(w, http.StatusOK, reports)
 }
+
+type updateReportStatusRequest struct {
+	Status string `json:"status"`
+}
+
+func (h *ReportHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	var in updateReportStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		utils.RespondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	report, err := h.svc.UpdateStatus(r.Context(), r.PathValue("id"), in.Status)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrValidation):
+			utils.RespondError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, services.ErrNotFound):
+			utils.RespondError(w, http.StatusNotFound, "report not found")
+		default:
+			utils.RespondError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+	utils.RespondData(w, http.StatusOK, report)
+}
+
+func (h *ReportHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	if err := h.svc.Delete(r.Context(), r.PathValue("id")); err != nil {
+		if errors.Is(err, services.ErrNotFound) {
+			utils.RespondError(w, http.StatusNotFound, "report not found")
+			return
+		}
+		utils.RespondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

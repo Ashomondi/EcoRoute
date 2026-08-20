@@ -59,6 +59,13 @@ func (r *WasteRepository) ResetCollected(ctx context.Context, id string) error {
 	return err
 }
 
+func (r *WasteRepository) EscalatePriority(ctx context.Context, id string) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE waste_points SET status = $1 WHERE id = $2 AND status <> $1`,
+		models.StatusCritical, id)
+	return err
+}
+
 func (r *WasteRepository) Update(ctx context.Context, wp *models.WastePoint) (*models.WastePoint, error) {
 	return scanWastePoint(r.pool.QueryRow(ctx,
 		`UPDATE waste_points

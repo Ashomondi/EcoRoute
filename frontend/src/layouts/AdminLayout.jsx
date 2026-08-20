@@ -5,7 +5,6 @@ const NAV = [
   { to: '/admin/dashboard', label: 'Dashboard' },
   { to: '/admin/waste-points', label: 'Waste Points' },
   { to: '/admin/trucks', label: 'Trucks' },
-  { to: '/admin/routes', label: 'Routes' },
   { to: '/admin/reports', label: 'Reports' },
   { to: '/admin/analytics', label: 'Analytics' },
 ]

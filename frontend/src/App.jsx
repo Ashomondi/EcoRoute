@@ -4,17 +4,11 @@ import RootLayout from './layouts/RootLayout'
 import AdminLayout from './layouts/AdminLayout'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
-
-function AdminPlaceholder() {
-  return (
-    <div className="container">
-      <div className="card">
-        <h2>Admin</h2>
-        <p className="muted">Dashboard coming next.</p>
-      </div>
-    </div>
-  )
-}
+import Dashboard from './pages/admin/Dashboard'
+import WastePoints from './pages/admin/WastePoints'
+import Trucks from './pages/admin/Trucks'
+import Reports from './pages/admin/Reports'
+import Analytics from './pages/admin/Analytics'
 
 export default function App() {
   return (
@@ -29,7 +23,11 @@ export default function App() {
 
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="dashboard" element={<AdminPlaceholder />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="waste-points" element={<WastePoints />} />
+          <Route path="trucks" element={<Trucks />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="analytics" element={<Analytics />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

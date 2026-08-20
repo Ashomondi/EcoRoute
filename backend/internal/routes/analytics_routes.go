@@ -16,4 +16,5 @@ func RegisterAnalytics(r *Router) {
 	admin := middleware.RequireRole(string(models.RoleAdmin))
 
 	r.Handle("GET", "/analytics/summary", auth(admin(h.Summary)))
+	r.Handle("GET", "/analytics/trend", auth(admin(h.Trend)))
 }

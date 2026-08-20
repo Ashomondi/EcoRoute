@@ -2,7 +2,9 @@ package repositories
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"ecoroute/backend/internal/models"
@@ -43,6 +45,31 @@ func (r *ReportRepository) List(ctx context.Context, status string) ([]models.Wa
 func (r *ReportRepository) ListByUser(ctx context.Context, userID string) ([]models.WasteReport, error) {
 	return r.list(ctx,
 		`SELECT `+reportCols+` FROM waste_reports WHERE reported_by = $1 `+reportOrder, userID)
+}
+
+func (r *ReportRepository) GetByID(ctx context.Context, id string) (*models.WasteReport, error) {
+	rep := &models.WasteReport{}
+	err := r.pool.QueryRow(ctx,
+		`SELECT `+reportCols+` FROM waste_reports WHERE id = $1`, id,
+	).Scan(&rep.ID, &rep.WastePointID, &rep.ReportedBy, &rep.ProblemType, &rep.Description, &rep.PhotoURL, &rep.Priority, &rep.Status, &rep.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return rep, nil
+}
+
+func (r *ReportRepository) UpdateStatus(ctx context.Context, id, status string) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE waste_reports SET status = $2 WHERE id = $1`, id, status)
+	return err
+}
+
+func (r *ReportRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM waste_reports WHERE id = $1`, id)
+	return err
 }
 
 func (r *ReportRepository) list(ctx context.Context, query string, args ...any) ([]models.WasteReport, error) {

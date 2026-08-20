@@ -54,3 +54,29 @@ func (s *AnalyticsService) Summary(ctx context.Context) (*models.AnalyticsSummar
 
 	return summary, nil
 }
+
+func (s *AnalyticsService) Trend(ctx context.Context, days int) ([]models.DailySummary, error) {
+	if days <= 0 || days > 90 {
+		days = 7
+	}
+
+	rows, err := s.pool.Query(ctx,
+		`SELECT day, collected_count, failed_count, collected_kg
+		 FROM daily_collection_summary
+		 WHERE day >= current_date - ($1 || ' days')::interval
+		 ORDER BY day`, days)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	trend := []models.DailySummary{}
+	for rows.Next() {
+		d := models.DailySummary{}
+		if err := rows.Scan(&d.Day, &d.CollectedCount, &d.FailedCount, &d.CollectedKg); err != nil {
+			return nil, err
+		}
+		trend = append(trend, d)
+	}
+	return trend, rows.Err()
+}

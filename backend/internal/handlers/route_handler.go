@@ -77,6 +77,19 @@ func (h *RouteHandler) Get(w http.ResponseWriter, r *http.Request) {
 	utils.RespondData(w, http.StatusOK, route)
 }
 
+func (h *RouteHandler) GetStops(w http.ResponseWriter, r *http.Request) {
+	stops, err := h.svc.GetStops(r.Context(), r.PathValue("id"))
+	if err != nil {
+		if errors.Is(err, services.ErrNotFound) {
+			utils.RespondError(w, http.StatusNotFound, "route not found")
+			return
+		}
+		utils.RespondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	utils.RespondData(w, http.StatusOK, stops)
+}
+
 type updateRouteStatusRequest struct {
 	Status string `json:"status"`
 }

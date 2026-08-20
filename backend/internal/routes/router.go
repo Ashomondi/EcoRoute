@@ -27,6 +27,8 @@ func NewRouter(deps *Deps) *Router {
 		utils.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
+	RegisterAuth(r)
+
 	return r
 }
 

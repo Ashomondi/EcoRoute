@@ -701,6 +701,12 @@ textarea:focus {
     font-size: 30px;
   }
 }
+
+@media (max-width: 900px) {
+  .shell {
+    flex-direction: column;
+  }
+
   .sidebar {
     width: 100%;
     height: auto;

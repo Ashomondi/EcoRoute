@@ -1,3 +1,5 @@
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+
 const TOKEN_KEY = 'ecoroute_token'
 
 export function getToken() {
@@ -21,7 +23,7 @@ async function request(method, path, body) {
 
   let res
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetch(`${API_BASE}${path}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -41,6 +43,10 @@ async function request(method, path, body) {
   }
 
   if (!res.ok) {
+    if (res.status === 401 && path !== '/auth/login') {
+      setToken(null)
+      window.dispatchEvent(new Event('ecoroute:unauthorized'))
+    }
     const err = new Error(data.error || `Request failed (${res.status})`)
     err.status = res.status
     throw err

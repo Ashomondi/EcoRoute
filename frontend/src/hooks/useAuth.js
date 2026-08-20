@@ -1,4 +1,12 @@
-import { createContext, createElement, useCallback, useContext, useMemo, useState } from 'react'
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   login as apiLogin,
   register as apiRegister,
@@ -26,6 +34,12 @@ export function AuthProvider({ children }) {
       localStorage.removeItem(USER_KEY)
     }
   }, [])
+
+  useEffect(() => {
+    const onUnauthorized = () => persist(null)
+    window.addEventListener('ecoroute:unauthorized', onUnauthorized)
+    return () => window.removeEventListener('ecoroute:unauthorized', onUnauthorized)
+  }, [persist])
 
   const login = useCallback(
     async (email, password) => {

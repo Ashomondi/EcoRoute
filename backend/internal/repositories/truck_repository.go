@@ -77,6 +77,12 @@ func (r *TruckRepository) SetDriver(ctx context.Context, truckID string, driverI
 		`UPDATE trucks SET driver_id = $2 WHERE id = $1 RETURNING `+truckCols, truckID, driverID))
 }
 
+func (r *TruckRepository) SetStatus(ctx context.Context, truckID, status string) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE trucks SET status = $2 WHERE id = $1`, truckID, status)
+	return err
+}
+
 func scanTruck(row pgx.Row) (*models.Truck, error) {
 	t := &models.Truck{}
 	err := row.Scan(&t.ID, &t.RegistrationNumber, &t.CapacityKg, &t.DriverID, &t.CurrentLat, &t.CurrentLng, &t.Status, &t.CreatedAt)

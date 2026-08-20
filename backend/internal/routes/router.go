@@ -31,6 +31,7 @@ func NewRouter(deps *Deps) *Router {
 	RegisterWaste(r)
 	RegisterTrucks(r)
 	RegisterCollections(r)
+	RegisterRoutes(r)
 
 	return r
 }

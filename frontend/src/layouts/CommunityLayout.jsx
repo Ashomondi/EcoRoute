@@ -1,24 +1,20 @@
-import { Navigate, NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import Logo from '../components/Logo'
 
 const NAV = [
   { to: '/community', label: 'Dashboard', end: true },
   { to: '/community/report', label: 'Report Waste' },
   { to: '/community/schedule', label: 'Collection Schedule' },
+  { to: '/community/recycle', label: 'Recycle Waste' },
 ]
 
 export default function CommunityLayout() {
   const { user, logout } = useAuth()
-  if (!user || user.role !== 'community') {
-    return <Navigate to="/login" replace />
-  }
-
   return (
     <div className="community-shell">
       <aside className="community-sidebar">
         <div className="community-brand">
-          <Logo size={28} />
+          <span className="logo-dot" />
           <div className="community-brand-title">
             <strong>EcoRoute</strong>
             <span className="community-role-pill">Resident</span>
@@ -37,9 +33,10 @@ export default function CommunityLayout() {
           ))}
         </nav>
         <div className="community-sidebar-footer">
-          <p className="community-sidebar-user">{user.name}</p>
-          <button className="btn btn-outline" type="button" onClick={logout}>
-            Log out
+          <span className="community-sidebar-user">{user?.name}</span>
+          <span className="muted">{user?.email}</span>
+          <button type="button" className="btn btn-outline" onClick={logout}>
+            Sign out
           </button>
         </div>
       </aside>

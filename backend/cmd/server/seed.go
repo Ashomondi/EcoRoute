@@ -116,6 +116,11 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 	}
 	log.Println("seed: reports ok")
 
+	if err := seedRecycling(ctx, pool, communityID); err != nil {
+		return err
+	}
+	log.Println("seed: recycling ok")
+
 	return nil
 }
 
@@ -198,6 +203,84 @@ func seedReport(ctx context.Context, pool *pgxpool.Pool, reporterID, pointID, pr
 		`INSERT INTO waste_reports (waste_point_id, reported_by, problem_type, description, priority, status)
 		 VALUES ($1, $2, $3, $4, $5, 'open')`,
 		pointID, reporterID, problemType, description, priority)
+	return err
+}
+
+func seedRecycling(ctx context.Context, pool *pgxpool.Pool, communityID string) error {
+	recyclers := []struct {
+		name   string
+		addr   string
+		lat    float64
+		lng    float64
+		types  []string
+	}{
+		{"Lake Basin Recycling Centre", "Oginga Odinga St, Kisumu", -0.1040, 34.7440, []string{"plastic", "paper", "metal", "glass"}},
+		{"Kisumu Green Compost Hub", "Milimani, Kisumu", -0.1000, 34.7630, []string{"organic", "paper"}},
+		{"Uzima E-Waste Drop", "Jomo Kenyatta Ave, Kisumu", -0.1100, 34.7560, []string{"e_waste"}},
+		{"Manyatta Textile Redemption", "Manyatta B, Kisumu", -0.0950, 34.7900, []string{"textile"}},
+		{"Nyalenda Battery & Chemical Drop", "Nyalenda, Kisumu", -0.1100, 34.7200, []string{"hazardous"}},
+	}
+	ids := map[string]string{}
+	for _, rc := range recyclers {
+		id, err := seedRecycler(ctx, pool, rc.name, rc.addr, rc.lat, rc.lng, rc.types)
+		if err != nil {
+			return err
+		}
+		ids[rc.name] = id
+	}
+
+	records := []struct {
+		kind   string
+		kg     float64
+		name   string
+	}{
+		{"paper", 3.0, "Lake Basin Recycling Centre"},
+		{"plastic", 2.0, "Lake Basin Recycling Centre"},
+	}
+	for _, rec := range records {
+		var recyclerID *string
+		if id, ok := ids[rec.name]; ok {
+			recyclerID = &id
+		}
+		if err := seedRecyclingRecord(ctx, pool, communityID, rec.kind, rec.kg, recyclerID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func seedRecycler(ctx context.Context, pool *pgxpool.Pool, name, addr string, lat, lng float64, accepted []string) (string, error) {
+	var id string
+	err := pool.QueryRow(ctx, `SELECT id FROM recyclers WHERE name = $1`, name).Scan(&id)
+	if err == nil {
+		return id, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return "", err
+	}
+	err = pool.QueryRow(ctx,
+		`INSERT INTO recyclers (name, address, latitude, longitude, accepted_types)
+		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		name, addr, lat, lng, accepted).Scan(&id)
+	return id, err
+}
+
+func seedRecyclingRecord(ctx context.Context, pool *pgxpool.Pool, userID, wasteType string, kg float64, recyclerID *string) error {
+	var exists bool
+	if err := pool.QueryRow(ctx,
+		`SELECT EXISTS (
+			SELECT 1 FROM recycling_records
+			WHERE user_id = $1 AND waste_type = $2 AND estimated_kg = $3
+		 )`, userID, wasteType, kg).Scan(&exists); err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	_, err := pool.Exec(ctx,
+		`INSERT INTO recycling_records (user_id, waste_type, estimated_kg, recycler_id)
+		 VALUES ($1, $2, $3, $4)`,
+		userID, wasteType, kg, recyclerID)
 	return err
 }
 

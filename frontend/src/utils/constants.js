@@ -1,36 +1,30 @@
+export const ROLES = {
+  ADMIN: 'admin',
+  DRIVER: 'driver',
+  COMMUNITY: 'community',
+}
+
 export const ROLE_LABELS = {
   admin: 'Admin',
   driver: 'Driver',
-  community: 'Resident',
+  community: 'Community',
 }
 
-export const STATUS_LABELS = {
-  ok: 'Healthy',
-  warning: 'Nearing capacity',
+export const WASTE_STATUS = {
+  OK: 'ok',
+  WARNING: 'warning',
+  CRITICAL: 'critical',
+}
+
+export const WASTE_STATUS_LABELS = {
+  ok: 'OK',
+  warning: 'Warning',
   critical: 'Critical',
-}
-
-export const PRIORITY_LABELS = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-}
-
-export const REPORT_STATUS_LABELS = {
-  open: 'Open',
-  in_progress: 'In progress',
-  resolved: 'Resolved',
-}
-
-export const REPORT_STATUS_BADGES = {
-  open: 'badge-warning',
-  in_progress: 'badge-medium',
-  resolved: 'badge-resolved',
 }
 
 export const TRUCK_STATUS_LABELS = {
   idle: 'Idle',
-  en_route: 'En route',
+  en_route: 'En Route',
   full: 'Full',
   maintenance: 'Maintenance',
 }
@@ -41,16 +35,35 @@ export const ROUTE_STATUS_LABELS = {
   completed: 'Completed',
 }
 
+export const REPORT_STATUS_LABELS = {
+  open: 'Open',
+  in_progress: 'In Progress',
+  resolved: 'Resolved',
+}
+
+export const REPORT_PRIORITY_LABELS = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+}
+
 export const PROBLEM_TYPE_LABELS = {
-  overflow: 'Overflowing bin',
-  illegal_dumping: 'Illegal dumping',
-  missed_collection: 'Missed collection',
+  overflow: 'Overflow',
+  illegal_dumping: 'Illegal Dumping',
+  missed_collection: 'Missed Collection',
   other: 'Other',
 }
 
-export const PROBLEM_TYPES = [
-  { value: 'overflow', label: 'Overflowing bin' },
-  { value: 'illegal_dumping', label: 'Illegal dumping' },
-  { value: 'missed_collection', label: 'Missed collection' },
-  { value: 'other', label: 'Other' },
+export const COLLECT_THRESHOLD_PCT = 85
+export const WARNING_THRESHOLD_PCT = 60
+
+export const DEMO_ACCOUNTS = [
+  { role: 'admin', email: 'admin@ecoroute.dev', password: 'admin123', label: 'Admin' },
+  { role: 'driver', email: 'driver@ecoroute.dev', password: 'driver123', label: 'Driver' },
+  { role: 'community', email: 'community@ecoroute.dev', password: 'community123', label: 'Community' },
 ]
+
+export const KISUMU_CENTER = { lat: -0.1022, lng: 34.7617 }
+
+export const TOKEN_KEY = 'ecoroute_token'
+export const USER_KEY = 'ecoroute_user'

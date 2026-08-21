@@ -1,11 +1,10 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
-export default function AuthLayout() {
+export default function AuthLayout({ children }) {
   const { user } = useAuth()
   if (user) {
-    const home = user.role === 'admin' ? '/admin' : user.role === 'driver' ? '/driver' : '/community'
-    return <Navigate to={home} replace />
+    return <Navigate to={`/${user.role}`} replace />
   }
-  return <Outlet />
+  return <div className="auth-wrap">{children}</div>
 }

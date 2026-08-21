@@ -1,19 +1,25 @@
 /**
- * @typedef {'admin'|'driver'|'community'} UserRole
- *
  * @typedef {Object} User
  * @property {string} id
  * @property {string} name
  * @property {string} email
- * @property {UserRole} role
+ * @property {'admin'|'driver'|'community'} role
  * @property {string} created_at
- *
+ */
+
+/**
+ * @typedef {Object} AuthResult
+ * @property {string} token
+ * @property {User} user
+ */
+
+/**
  * @typedef {Object} RegisterInput
  * @property {string} name
  * @property {string} email
  * @property {string} password
- * @property {UserRole} role
+ * @property {'community'|'driver'} role
  * @property {string} [invite_code]
  */
 
-export {}
+export const _types = null

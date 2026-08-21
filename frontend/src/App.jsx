@@ -1,66 +1,80 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
+import { RequireAuth, RequireRole } from './layouts/RootLayout'
 import AuthLayout from './layouts/AuthLayout'
-import RootLayout from './layouts/RootLayout'
-import AdminAuthLayout from './layouts/AdminAuthLayout'
-import AdminLayout from './layouts/AdminLayout'
 import CommunityLayout from './layouts/CommunityLayout'
+import AdminLayout from './layouts/AdminLayout'
 import DriverLayout from './layouts/DriverLayout'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
-import SignupPage from './pages/SignupPage'
-import AdminLogin from './pages/admin/AdminLogin'
-import AdminSignup from './pages/admin/AdminSignup'
+import CommunityDashboard from './pages/community/CommunityDashboard'
+import ReportWaste from './pages/community/ReportWaste'
+import CollectionSchedule from './pages/community/CollectionSchedule'
+import RecycleWaste from './pages/community/RecycleWaste'
 import Dashboard from './pages/admin/Dashboard'
 import WastePoints from './pages/admin/WastePoints'
 import Trucks from './pages/admin/Trucks'
 import RoutesPage from './pages/admin/Routes'
 import Reports from './pages/admin/Reports'
 import Analytics from './pages/admin/Analytics'
-import CommunityDashboard from './pages/community/CommunityDashboard'
-import ReportWaste from './pages/community/ReportWaste'
-import CollectionSchedule from './pages/community/CollectionSchedule'
 import DriverDashboard from './pages/driver/DriverDashboard'
 import MyRoute from './pages/driver/MyRoute'
 
 export default function App() {
   return (
     <Routes>
-      <Route element={<RootLayout />}>
-        <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/login"
+            element={
+              <AuthLayout>
+                <LoginPage />
+              </AuthLayout>
+            }
+          />
 
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-        </Route>
+          <Route
+            path="/community"
+            element={
+              <RequireAuth>
+                <CommunityLayout />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<CommunityDashboard />} />
+            <Route path="report" element={<ReportWaste />} />
+            <Route path="schedule" element={<CollectionSchedule />} />
+            <Route path="recycle" element={<RecycleWaste />} />
+          </Route>
 
-        <Route element={<AdminAuthLayout />}>
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/signup" element={<AdminSignup />} />
-        </Route>
+          <Route
+            path="/admin"
+            element={
+              <RequireRole role="admin">
+                <AdminLayout />
+              </RequireRole>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="waste-points" element={<WastePoints />} />
+            <Route path="trucks" element={<Trucks />} />
+            <Route path="routes" element={<RoutesPage />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="analytics" element={<Analytics />} />
+          </Route>
 
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="waste-points" element={<WastePoints />} />
-          <Route path="trucks" element={<Trucks />} />
-          <Route path="routes" element={<RoutesPage />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="analytics" element={<Analytics />} />
-        </Route>
+          <Route
+            path="/driver"
+            element={
+              <RequireRole role="driver">
+                <DriverLayout />
+              </RequireRole>
+            }
+          >
+            <Route index element={<DriverDashboard />} />
+            <Route path="route" element={<MyRoute />} />
+          </Route>
 
-        <Route path="/community" element={<CommunityLayout />}>
-          <Route index element={<CommunityDashboard />} />
-          <Route path="report" element={<ReportWaste />} />
-          <Route path="schedule" element={<CollectionSchedule />} />
-        </Route>
-
-        <Route path="/driver" element={<DriverLayout />}>
-          <Route index element={<DriverDashboard />} />
-          <Route path="my-route" element={<MyRoute />} />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Route>
-    </Routes>
+          <Route path="*" element={<LandingPage />} />
+        </Routes>
   )
 }

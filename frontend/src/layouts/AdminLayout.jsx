@@ -1,5 +1,6 @@
 import { Navigate, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import Logo from '../components/Logo'
 
 const NAV = [
   { to: '/admin/dashboard', label: 'Dashboard' },
@@ -13,15 +14,16 @@ const NAV = [
 export default function AdminLayout() {
   const { user, logout } = useAuth()
   if (!user || user.role !== 'admin') {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/admin/login" replace />
   }
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
+    <div className="shell admin-theme">
+      <aside className="sidebar admin-sidebar">
         <div className="sidebar-brand">
-          <span className="logo-dot" />
+          <Logo size={28} />
           <strong>EcoRoute</strong>
+          <span className="community-role-pill">Admin</span>
         </div>
         <nav className="sidebar-nav">
           {NAV.map((item) => (
@@ -35,7 +37,7 @@ export default function AdminLayout() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <p className="muted">{user.name || user.email}</p>
+          <p className="admin-sidebar-user">{user.name}</p>
           <button className="btn btn-outline btn-block" type="button" onClick={logout}>
             Log out
           </button>

@@ -35,7 +35,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, services.ErrEmailExists):
 			utils.RespondError(w, http.StatusConflict, err.Error())
-		case errors.Is(err, services.ErrInvalidRole), errors.Is(err, services.ErrValidation):
+		case errors.Is(err, services.ErrInvalidRole),
+			errors.Is(err, services.ErrInvalidInvite),
+			errors.Is(err, services.ErrValidation):
 			utils.RespondError(w, http.StatusBadRequest, err.Error())
 		default:
 			utils.RespondError(w, http.StatusInternalServerError, "internal server error")
@@ -59,6 +61,28 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		utils.RespondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	utils.RespondData(w, http.StatusOK, result)
+}
+
+func (h *AuthHandler) LoginAdmin(w http.ResponseWriter, r *http.Request) {
+	var in loginRequest
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		utils.RespondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	result, err := h.svc.LoginAdmin(r.Context(), in.Email, in.Password)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrInvalidLogin):
+			utils.RespondError(w, http.StatusUnauthorized, "invalid email or password")
+		case errors.Is(err, services.ErrAdminOnly):
+			utils.RespondError(w, http.StatusForbidden, err.Error())
+		default:
+			utils.RespondError(w, http.StatusInternalServerError, "internal server error")
+		}
 		return
 	}
 	utils.RespondData(w, http.StatusOK, result)

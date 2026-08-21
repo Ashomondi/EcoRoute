@@ -7,6 +7,13 @@ export async function login(email, password) {
   return data.user
 }
 
+/** @returns {Promise<import('../types/user').User>} */
+export async function adminLogin(email, password) {
+  const data = await api.post('/auth/admin/login', { email, password })
+  setToken(data.token)
+  return data.user
+}
+
 /** @param {import('../types/user').RegisterInput} input @returns {Promise<import('../types/user').User>} */
 export async function register(input) {
   const data = await api.post('/auth/register', input)

@@ -1,12 +1,15 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import AuthLayout from './layouts/AuthLayout'
 import RootLayout from './layouts/RootLayout'
+import AdminAuthLayout from './layouts/AdminAuthLayout'
 import AdminLayout from './layouts/AdminLayout'
 import CommunityLayout from './layouts/CommunityLayout'
 import DriverLayout from './layouts/DriverLayout'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminSignup from './pages/admin/AdminSignup'
 import Dashboard from './pages/admin/Dashboard'
 import WastePoints from './pages/admin/WastePoints'
 import Trucks from './pages/admin/Trucks'
@@ -28,6 +31,11 @@ export default function App() {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+        </Route>
+
+        <Route element={<AdminAuthLayout />}>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/signup" element={<AdminSignup />} />
         </Route>
 
         <Route path="/admin" element={<AdminLayout />}>

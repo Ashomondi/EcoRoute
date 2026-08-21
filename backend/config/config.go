@@ -21,6 +21,7 @@ type Config struct {
 	JWTTTL       time.Duration
 	AIServiceURL string
 	AITimeout    time.Duration
+	AdminInvite  string
 
 	CORSAllowedOrigins []string
 	RateLimitRequests  int
@@ -44,6 +45,7 @@ func Load() (*Config, error) {
 		JWTTTL:       24 * time.Hour,
 		AIServiceURL: getEnv("AI_SERVICE_URL", "http://localhost:8000"),
 		AITimeout:    2 * time.Second,
+		AdminInvite:  os.Getenv("ADMIN_INVITE_CODE"),
 
 		CORSAllowedOrigins: splitList(getEnv("CORS_ALLOWED_ORIGINS", "*")),
 		RateLimitRequests:  120,

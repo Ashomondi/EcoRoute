@@ -13,6 +13,7 @@
  * @property {string} email
  * @property {string} password
  * @property {UserRole} role
+ * @property {string} [invite_code]
  */
 
 export {}

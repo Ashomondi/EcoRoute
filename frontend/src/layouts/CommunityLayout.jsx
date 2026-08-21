@@ -19,6 +19,7 @@ export default function CommunityLayout() {
         <div className="community-brand">
           <span className="logo-dot" />
           <strong>EcoRoute</strong>
+          <span className="community-role-pill">Resident</span>
         </div>
         <nav className="community-nav">
           {NAV.map((item) => (

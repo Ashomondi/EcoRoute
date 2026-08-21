@@ -1,4 +1,4 @@
-# EcoRoute
+1# EcoRoute
 
 Smart waste collection for cleaner cities. EcoRoute monitors waste collection points, optimizes truck routes, lets residents report issues, and measures the environmental impact of every run.
 

@@ -14,6 +14,8 @@ type AnalyticsSummary struct {
 	DistanceSavedKm float64 `json:"distance_saved_km"`
 	FuelSavedL      float64 `json:"fuel_saved_l"`
 	CO2AvoidedKg    float64 `json:"co2_avoided_kg"`
+
+	RecycledMaterialValue float64 `json:"recycled_material_value"`
 }
 
 type DailySummary struct {

@@ -22,6 +22,20 @@ type AIPredictionResult struct {
 	RecommendCollect       bool    `json:"recommend_collect"`
 }
 
+type AIClassifyRequest struct {
+	WastePointID    string  `json:"waste_point_id"`
+	CurrentLevelPct int     `json:"current_level_pct"`
+	MaxCapacityKg   float64 `json:"max_capacity_kg"`
+	Category        string  `json:"category"`
+}
+
+type AIClassifyResult struct {
+	TotalKg         float64            `json:"total_kg"`
+	Composition     map[string]float64 `json:"composition"`
+	PrimaryCategory string             `json:"primary_category"`
+	Confidence      float64            `json:"confidence"`
+}
+
 type AIClient struct {
 	baseURL string
 	client  *http.Client
@@ -60,6 +74,39 @@ func (c *AIClient) Predict(ctx context.Context, req AIPredictionRequest) (*AIPre
 	var result AIPredictionResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("ai predict decode: %w", err)
+	}
+	return &result, nil
+}
+
+func (c *AIClient) Classify(ctx context.Context, req AIClassifyRequest) (*AIClassifyResult, error) {
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint := strings.TrimRight(c.baseURL, "/") + "/classify"
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("ai classify request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("ai classify returned status %d", resp.StatusCode)
+	}
+
+	var result AIClassifyResult
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("ai classify decode: %w", err)
+	}
+	if result.Composition == nil {
+		result.Composition = map[string]float64{}
 	}
 	return &result, nil
 }

@@ -1,95 +1,123 @@
 import { useState } from 'react'
-import RouteCard from '../../components/Routes/RouteCard'
 import OptimizationResult from '../../components/Routes/OptimizationResult'
+import RouteCard from '../../components/Routes/RouteCard'
 import WasteMap from '../../components/Map/WasteMap'
 import { useTrucks } from '../../hooks/useTrucks'
 import { useRoutes } from '../../hooks/useRoutes'
+import routeService from '../../services/routeService'
 
-export default function Routes() {
-  const { trucks } = useTrucks()
-  const { routes, loading, error, optimize } = useRoutes()
-  const [truckId, setTruckId] = useState('')
+export default function RoutesPage() {
+  const { trucks, loading: trucksLoading } = useTrucks()
+  const { routes, loading: routesLoading, optimize, optimizing, optimizeError, updateStatus } = useRoutes()
   const [result, setResult] = useState(null)
-  const [optimizing, setOptimizing] = useState(false)
-  const [optError, setOptError] = useState('')
+  const [stops, setStops] = useState([])
+  const [selectedTruck, setSelectedTruck] = useState('')
+  const [actionError, setActionError] = useState('')
 
-  async function onOptimize() {
-    if (!truckId) {
-      return
+  const handleOptimize = async () => {
+    if (!selectedTruck) return
+    setActionError('')
+    const res = await optimize(selectedTruck)
+    if (res) {
+      setResult(res)
+      setStops(res.stops || [])
     }
-    setOptimizing(true)
-    setOptError('')
-    setResult(null)
+  }
+
+  const handleViewStops = async (routeId) => {
     try {
-      setResult(await optimize(truckId))
-    } catch (e) {
-      setOptError(e.message)
-    } finally {
-      setOptimizing(false)
+      const s = await routeService.getRouteStops(routeId)
+      setStops(s.map((stop) => stop.waste_point))
+    } catch (err) {
+      setActionError(err.message)
+    }
+  }
+
+  const handleStatus = async (routeId, status) => {
+    try {
+      await updateStatus(routeId, status)
+    } catch (err) {
+      setActionError(err.message)
     }
   }
 
   return (
     <div>
       <div className="page-header">
-        <h1>Route Optimization</h1>
-        <p className="muted">One click to a shorter, cheaper route.</p>
+        <h1>Route optimization</h1>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="grid cols-3">
-          <div className="field">
-            <label>Truck</label>
-            <select
-              className="select"
-              value={truckId}
-              onChange={(e) => setTruckId(e.target.value)}
-            >
-              <option value="">Select a truck…</option>
-              {trucks.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.registration_number}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button
-              className="btn btn-primary"
-              type="button"
-              disabled={!truckId || optimizing}
-              onClick={onOptimize}
-            >
-              {optimizing ? 'Optimizing…' : 'Optimize Route'}
-            </button>
-          </div>
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-head">
+          <h3>Optimize a route</h3>
         </div>
-        {optError && <p className="error">{optError}</p>}
+        <p className="sub">Pick a truck to build the shortest capacity-aware route.</p>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <select className="select" style={{ maxWidth: 320 }} value={selectedTruck} onChange={(e) => setSelectedTruck(e.target.value)} disabled={trucksLoading}>
+            <option value="">{trucksLoading ? 'Loading trucks…' : 'Select a truck…'}</option>
+            {trucks.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.registration_number}
+              </option>
+            ))}
+          </select>
+          <button type="button" className="btn btn-primary" onClick={handleOptimize} disabled={!selectedTruck || optimizing}>
+            {optimizing ? 'Optimizing…' : '⚡ Optimize route'}
+          </button>
+        </div>
+        {optimizeError && <div className="error">{optimizeError}</div>}
+        {actionError && <div className="error">{actionError}</div>}
       </div>
 
-      {result && <OptimizationResult result={result} />}
-
-      {result && result.stops.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <WasteMap
-            points={result.stops.map((s) => s.waste_point)}
-            route={result.stops.map((s) => s.waste_point)}
-            height="360px"
-          />
+      {result && (
+        <div style={{ marginBottom: 20 }}>
+          <OptimizationResult result={result} />
         </div>
       )}
 
-      <div style={{ marginTop: 20 }}>
-        <h3 style={{ marginBottom: 12 }}>Saved routes</h3>
-        {error && <p className="error">{error}</p>}
-        {loading ? (
+      {(stops.length > 1 || result) && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card-head">
+            <h3>Route map</h3>
+          </div>
+          <p className="sub">Optimized stop order on the map.</p>
+          <WasteMap wastePoints={stops} routePoints={stops} height={380} />
+        </div>
+      )}
+
+      <div className="card">
+        <div className="card-head">
+          <h3>All routes</h3>
+        </div>
+        <p className="sub">Planned, active and completed routes.</p>
+        {routesLoading ? (
           <div className="spinner" />
         ) : routes.length === 0 ? (
-          <p className="empty">No routes yet — optimize one above.</p>
+          <div className="empty">No routes yet. Optimize one above.</div>
         ) : (
           <div className="grid cols-3">
-            {routes.map((r) => (
-              <RouteCard key={r.id} route={r} />
+            {routes.map((route) => (
+              <RouteCard
+                key={route.id}
+                route={route}
+                actions={
+                  <>
+                    <button type="button" className="btn btn-outline" onClick={() => handleViewStops(route.id)}>
+                      View stops
+                    </button>
+                    {route.status === 'planned' && (
+                      <button type="button" className="btn btn-primary" onClick={() => handleStatus(route.id, 'active')}>
+                        Activate
+                      </button>
+                    )}
+                    {route.status === 'active' && (
+                      <button type="button" className="btn btn-primary" onClick={() => handleStatus(route.id, 'completed')}>
+                        Complete
+                      </button>
+                    )}
+                  </>
+                }
+              />
             ))}
           </div>
         )}

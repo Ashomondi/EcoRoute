@@ -1,4 +1,4 @@
-# EcoRoute
+1# EcoRoute
 
 Smart waste collection for cleaner cities. EcoRoute monitors waste collection points, optimizes truck routes, lets residents report issues, and measures the environmental impact of every run.
 
@@ -7,11 +7,14 @@ Smart waste collection for cleaner cities. EcoRoute monitors waste collection po
 ## Features
 
 - **Waste monitoring** — live fill levels and status (`ok` / `warning` / `critical`) for every collection point, color-coded on an interactive map
+- **Smart bins + AI reads** — each bin collects a designated waste category; an AI read of a full bin reports the category composition and estimated weight (kg), which resolves into recycling material batches when collected
 - **Route optimization** — one click reorders a truck's stops (nearest-neighbour + 2-opt) to cut distance, fuel and time; before/after savings are shown and persisted
 - **Truck & driver workflow** — truck registry, driver assignment, route execution (start → collect stops → complete), failed-collection reporting
 - **Community reporting** — residents report overflowing bins, missed collections and illegal dumping (with photo + location); a report instantly escalates the linked point to `critical`
 - **Impact analytics** — distance/fuel/time saved, CO₂ avoided, collection rate and waste diverted, computed from real collection data
 - **AI prediction** — the backend asks a lightweight prediction service for tomorrow's fill level per point; if the AI is down the dashboard degrades gracefully (no 500s)
+- **Recycling pipeline** — waste collection → sorting → material batches → recovered material ledger
+- **♻️ EcoMarket** — a circular-economy marketplace where products made from recovered material are sold, traced back to the exact waste batch they came from, and checked out with seller/revenue splitting
 
 ## Tech Stack
 
@@ -70,6 +73,7 @@ Open http://localhost:5173.
 | Admin | `admin@ecoroute.dev` | `admin123` |
 | Driver | `driver@ecoroute.dev` | `driver123` |
 | Community | `community@ecoroute.dev` | `community123` |
+| Seller | `seller@ecoroute.dev` | `seller123` |
 
 The login page has one-click demo buttons for each role. Seeded data: 4 waste points (Kondele, Market A, Manyatta, Nyalenda), truck `KCA 123A` assigned to the driver, and two sample reports.
 
@@ -80,6 +84,7 @@ The login page has one-click demo buttons for each role. Seeded data: 4 waste po
 3. **Driver** → login with the Driver demo button → **My Route** → Start Route → mark each stop collected
 4. **Community** → login with the Community demo button → **Report Waste** → submit an issue → watch it escalate the point to `critical`
 5. **Admin** → **Analytics** → real distance/fuel/CO₂ impact figures
+6. **EcoMarket (the circular economy)** → anyone can browse `/market` and open a product's **Trace material origin** to see waste → collection → recycling → product; the Community demo account can add to cart, checkout (M-Pesa simulated) and see the waste transformed; the Seller demo account can manage products and view sales; Admin → **EcoMarket** shows the material ledger, orders and platform totals
 
 ## Key API endpoints
 

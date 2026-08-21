@@ -13,7 +13,8 @@ func RegisterCollections(r *Router) {
 	collectionRepo := repositories.NewCollectionRepository(deps.DB)
 	truckRepo := repositories.NewTruckRepository(deps.DB)
 	wasteRepo := repositories.NewWasteRepository(deps.DB)
-	collectionSvc := services.NewCollectionService(collectionRepo, truckRepo, wasteRepo)
+	binRepo := repositories.NewSmartBinRepository(deps.DB)
+	collectionSvc := services.NewCollectionService(collectionRepo, truckRepo, wasteRepo, binRepo)
 	h := handlers.NewCollectionHandler(collectionSvc)
 
 	auth := middleware.RequireAuth(deps.Config)

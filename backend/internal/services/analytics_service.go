@@ -6,16 +6,23 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"ecoroute/backend/internal/models"
+	"ecoroute/backend/internal/repositories"
 )
 
 const co2KgPerLitreFuel = 2.68
 
 type AnalyticsService struct {
-	pool *pgxpool.Pool
+	pool      *pgxpool.Pool
+	recycling *repositories.RecyclingRepository
+	processing *repositories.MaterialProcessingRepository
 }
 
 func NewAnalyticsService(pool *pgxpool.Pool) *AnalyticsService {
-	return &AnalyticsService{pool: pool}
+	return &AnalyticsService{
+		pool:       pool,
+		recycling:  repositories.NewRecyclingRepository(pool),
+		processing: repositories.NewMaterialProcessingRepository(pool),
+	}
 }
 
 func (s *AnalyticsService) Summary(ctx context.Context) (*models.AnalyticsSummary, error) {
@@ -47,10 +54,20 @@ func (s *AnalyticsService) Summary(ctx context.Context) (*models.AnalyticsSummar
 		return nil, err
 	}
 
-	summary.RecycledKg = summary.CollectedTodayKg
-	summary.LandfillDivertedKg = summary.CollectedTodayKg
+	recycledKg, recyclingCO2, err := s.recycling.RecyclingTotals(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	summary.RecycledKg = recycledKg
+	summary.LandfillDivertedKg = recycledKg
 	summary.FuelSavedL = summary.DistanceSavedKm * fuelLPerKm
-	summary.CO2AvoidedKg = summary.FuelSavedL * co2KgPerLitreFuel
+	summary.CO2AvoidedKg = summary.FuelSavedL*co2KgPerLitreFuel + recyclingCO2
+
+	summary.RecycledMaterialValue, err = s.processing.MaterialValue(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	return summary, nil
 }
@@ -63,7 +80,7 @@ func (s *AnalyticsService) Trend(ctx context.Context, days int) ([]models.DailyS
 	rows, err := s.pool.Query(ctx,
 		`SELECT day, collected_count, failed_count, collected_kg
 		 FROM daily_collection_summary
-		 WHERE day >= current_date - ($1 || ' days')::interval
+		 WHERE day >= current_date - make_interval(days => $1)
 		 ORDER BY day`, days)
 	if err != nil {
 		return nil, err

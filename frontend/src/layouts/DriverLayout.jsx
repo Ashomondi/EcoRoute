@@ -1,17 +1,13 @@
-import { Navigate, NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 const NAV = [
   { to: '/driver', label: 'Dashboard', end: true },
-  { to: '/driver/my-route', label: 'My Route' },
+  { to: '/driver/route', label: 'My Route' },
 ]
 
 export default function DriverLayout() {
   const { user, logout } = useAuth()
-  if (!user || user.role !== 'driver') {
-    return <Navigate to="/login" replace />
-  }
-
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -32,9 +28,9 @@ export default function DriverLayout() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <p className="muted">{user.name || user.email}</p>
-          <button className="btn btn-outline btn-block" type="button" onClick={logout}>
-            Log out
+          <span className="muted">{user?.name}</span>
+          <button type="button" className="btn btn-outline" onClick={logout}>
+            Sign out
           </button>
         </div>
       </aside>

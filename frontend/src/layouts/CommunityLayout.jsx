@@ -6,6 +6,7 @@ const NAV = [
   { to: '/community/report', label: 'Report Waste' },
   { to: '/community/schedule', label: 'Collection Schedule' },
   { to: '/community/recycle', label: 'Recycle Waste' },
+  { to: '/market', label: '🛒 Eco Market' },
 ]
 
 export default function CommunityLayout() {

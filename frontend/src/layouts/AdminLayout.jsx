@@ -3,11 +3,13 @@ import { useAuth } from '../hooks/useAuth'
 
 const NAV = [
   { to: '/admin', label: 'Dashboard', end: true },
+  { to: '/admin/smart-bins', label: 'Smart Bins' },
   { to: '/admin/waste-points', label: 'Waste Points' },
   { to: '/admin/trucks', label: 'Trucks' },
   { to: '/admin/routes', label: 'Routes' },
   { to: '/admin/reports', label: 'Reports' },
   { to: '/admin/analytics', label: 'Analytics' },
+  { to: '/admin/marketplace', label: '🛒 EcoMarket' },
 ]
 
 export default function AdminLayout() {

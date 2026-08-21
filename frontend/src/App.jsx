@@ -4,6 +4,7 @@ import AuthLayout from './layouts/AuthLayout'
 import CommunityLayout from './layouts/CommunityLayout'
 import AdminLayout from './layouts/AdminLayout'
 import DriverLayout from './layouts/DriverLayout'
+import MarketLayout from './layouts/MarketLayout'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import CommunityDashboard from './pages/community/CommunityDashboard'
@@ -16,8 +17,16 @@ import Trucks from './pages/admin/Trucks'
 import RoutesPage from './pages/admin/Routes'
 import Reports from './pages/admin/Reports'
 import Analytics from './pages/admin/Analytics'
+import AdminMarketplace from './pages/admin/Marketplace'
 import DriverDashboard from './pages/driver/DriverDashboard'
 import MyRoute from './pages/driver/MyRoute'
+import MarketHome from './pages/market/MarketHome'
+import MarketSellers from './pages/market/Sellers'
+import ProductDetail from './pages/market/ProductDetail'
+import CartPage from './pages/market/Cart'
+import CheckoutPage from './pages/market/Checkout'
+import MyOrders from './pages/market/MyOrders'
+import SellerDashboard from './pages/market/SellerDashboard'
 
 export default function App() {
   return (
@@ -60,6 +69,7 @@ export default function App() {
             <Route path="routes" element={<RoutesPage />} />
             <Route path="reports" element={<Reports />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="marketplace" element={<AdminMarketplace />} />
           </Route>
 
           <Route
@@ -72,6 +82,44 @@ export default function App() {
           >
             <Route index element={<DriverDashboard />} />
             <Route path="route" element={<MyRoute />} />
+          </Route>
+
+          <Route path="/market" element={<MarketLayout />}>
+            <Route index element={<MarketHome />} />
+            <Route path="sellers" element={<MarketSellers />} />
+            <Route path="product/:id" element={<ProductDetail />} />
+            <Route
+              path="cart"
+              element={
+                <RequireAuth>
+                  <CartPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="checkout"
+              element={
+                <RequireAuth>
+                  <CheckoutPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="orders"
+              element={
+                <RequireAuth>
+                  <MyOrders />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="seller"
+              element={
+                <RequireAuth>
+                  <SellerDashboard />
+                </RequireAuth>
+              }
+            />
           </Route>
 
           <Route path="*" element={<LandingPage />} />

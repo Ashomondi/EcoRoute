@@ -61,9 +61,24 @@ export const DEMO_ACCOUNTS = [
   { role: 'admin', email: 'admin@ecoroute.dev', password: 'admin123', label: 'Admin' },
   { role: 'driver', email: 'driver@ecoroute.dev', password: 'driver123', label: 'Driver' },
   { role: 'community', email: 'community@ecoroute.dev', password: 'community123', label: 'Community' },
+  { role: 'seller', email: 'seller@ecoroute.dev', password: 'seller123', label: 'Seller' },
 ]
 
-export const KISUMU_CENTER = { lat: -0.1022, lng: 34.7617 }
+export const MARKET_CATEGORIES = [
+  { slug: 'plastic', label: 'Plastic', emoji: '♻️' },
+  { slug: 'paper', label: 'Paper', emoji: '📦' },
+  { slug: 'glass', label: 'Glass', emoji: '🍾' },
+  { slug: 'organic', label: 'Organic', emoji: '🌱' },
+  { slug: 'wood', label: 'Wood', emoji: '🪵' },
+  { slug: 'textile', label: 'Textile', emoji: '👕' },
+  { slug: 'metal', label: 'Metal', emoji: '🔩' },
+  { slug: 'other', label: 'Other', emoji: '📦' },
+]
 
-export const TOKEN_KEY = 'ecoroute_token'
-export const USER_KEY = 'ecoroute_user'
+export const ORDER_STATUS_LABELS = {
+  pending: 'Pending',
+  paid: 'Paid',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+}

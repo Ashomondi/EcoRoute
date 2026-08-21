@@ -1,24 +1,27 @@
 import { useCallback, useEffect, useState } from 'react'
-import { listWastePoints } from '../services/wasteService'
+import { getCommunityCollections } from '../services/collectionService'
 
 /**
  * @returns {{
- *   points: import('../types/wastePoint').WastePoint[],
+ *   data: import('../types/community').CommunityCollections|null,
  *   loading: boolean,
  *   error: string,
  *   refetch: () => Promise<void>,
+ *   updatedAt: Date|null,
  * }}
  */
-export function useWastePoints() {
-  const [points, setPoints] = useState([])
+export function useCommunityCollections() {
+  const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [updatedAt, setUpdatedAt] = useState(null)
 
   const refetch = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      setPoints(await listWastePoints())
+      setData(await getCommunityCollections())
+      setUpdatedAt(new Date())
     } catch (e) {
       setError(e.message)
     } finally {
@@ -30,5 +33,5 @@ export function useWastePoints() {
     refetch()
   }, [refetch])
 
-  return { points, loading, error, refetch }
+  return { data, loading, error, refetch, updatedAt }
 }

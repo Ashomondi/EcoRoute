@@ -6,6 +6,12 @@ const COLOR = {
   ok: '#10b981',
 }
 
+/**
+ * @param {{
+ *   point: import('../../types/wastePoint').WastePoint,
+ *   onClick?: (point: import('../../types/wastePoint').WastePoint) => void,
+ * }} props
+ */
 export default function WasteMarker({ point, onClick }) {
   const color = COLOR[point.status] || COLOR.ok
 

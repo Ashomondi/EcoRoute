@@ -1,4 +1,6 @@
 /**
+ * @typedef {'ok'|'warning'|'critical'} WastePointStatus
+ *
  * @typedef {Object} AIPrediction
  * @property {number} predicted_level_tomorrow
  * @property {boolean} recommend_collect
@@ -9,10 +11,16 @@
  * @property {number} latitude
  * @property {number} longitude
  * @property {number} current_level_pct
- * @property {'ok'|'warning'|'critical'} status
+ * @property {WastePointStatus} status
  * @property {string|null} last_collected_at
  * @property {string} created_at
  * @property {AIPrediction} [prediction]
+ *
+ * @typedef {Object} WastePointInput
+ * @property {string} name
+ * @property {number} latitude
+ * @property {number} longitude
+ * @property {number} current_level_pct
  */
 
 export {}

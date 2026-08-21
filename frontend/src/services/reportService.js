@@ -1,13 +1,16 @@
 import { api, API_BASE, getToken } from './apiClient'
 
+/** @param {import('../types/report').ReportInput} input @returns {Promise<import('../types/report').WasteReport>} */
 export function createReport(input) {
   return api.post('/reports', input)
 }
 
+/** @returns {Promise<import('../types/report').WasteReport[]>} */
 export function listMyReports() {
   return api.get('/reports/mine')
 }
 
+/** @returns {Promise<string>} */
 export async function uploadPhoto(file) {
   const form = new FormData()
   form.append('file', file)

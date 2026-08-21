@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createReport, listMyReports } from '../services/reportService'
 
+/**
+ * @returns {{
+ *   reports: import('../types/report').WasteReport[],
+ *   loading: boolean,
+ *   error: string,
+ *   refetch: () => Promise<void>,
+ *   submit: (input: import('../types/report').ReportInput) => Promise<import('../types/report').WasteReport>,
+ * }}
+ */
 export function useReports() {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)

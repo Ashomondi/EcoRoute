@@ -202,6 +202,30 @@ Roles: any authenticated.
 ### `GET /community/activity?limit=10`
 Recent `collection` and `report` events: `[{ "type", "message", "time" }]`.
 
+### `GET /community/collections`
+The resident's upcoming scheduled collections and recent collection history for their area:
+
+```json
+{
+  "upcoming": [
+    {
+      "waste_point_id": "uuid", "waste_point_name": "Kondele",
+      "latitude": -0.09, "longitude": 34.8, "current_level_pct": 92, "status": "critical",
+      "route_id": "uuid", "route_status": "planned", "order": 1, "stop_count": 4,
+      "estimated_minutes": 72, "truck_registration": "KCA 123A", "related": true
+    }
+  ],
+  "past": [
+    {
+      "id": "uuid", "waste_point_id": "uuid", "waste_point_name": "Market A",
+      "outcome": "collected", "estimated_kg": 760, "collected_at": "2026-08-19T12:00:00Z"
+    }
+  ]
+}
+```
+
+`upcoming` are the next scheduled collections (deduped per waste point) from `planned`/`active` routes, ordered with points the resident reported on (`related`) first, then by urgency. `past` is the recent collection history ordered newest first.
+
 ## System
 
 ### `GET /health`

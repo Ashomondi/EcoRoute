@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Logo from '../components/Logo'
 import { useAuth } from '../hooks/useAuth'
+import { validateSignup } from '../utils/validators'
 
 export default function SignupPage() {
   const { register } = useAuth()
@@ -16,12 +18,9 @@ export default function SignupPage() {
   async function submit(e) {
     e.preventDefault()
     setError('')
-    if (password !== confirm) {
-      setError('Passwords do not match')
-      return
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    const err = validateSignup({ name, email, password, confirm })
+    if (err) {
+      setError(err)
       return
     }
     setBusy(true)
@@ -39,7 +38,7 @@ export default function SignupPage() {
     <div className="auth-wrap">
       <div className="auth-card card">
         <div className="auth-brand">
-          <span className="logo-dot" />
+          <Logo size={30} />
           <h1>EcoRoute</h1>
         </div>
         <p className="auth-tagline">Join your city&apos;s clean-up</p>

@@ -3,7 +3,7 @@ import StatCard from '../../components/Dashboard/StatCard'
 import { useAuth } from '../../hooks/useAuth'
 import { useTrucks } from '../../hooks/useTrucks'
 import { useRoutes } from '../../hooks/useRoutes'
-import { titleCase } from '../../utils/format'
+import { formatNumber, titleCase } from '../../utils/format'
 
 export default function DriverDashboard() {
   const { user } = useAuth()
@@ -33,7 +33,7 @@ export default function DriverDashboard() {
         />
         <StatCard
           label="Route distance"
-          value={latest ? latest.distance_km.toFixed(1) : '—'}
+          value={latest ? formatNumber(latest.distance_km, 1) : '—'}
           unit="km"
         />
       </div>
@@ -41,9 +41,11 @@ export default function DriverDashboard() {
       <div className="card">
         <h3>Today&apos;s plan</h3>
         <p className="muted" style={{ margin: '8px 0 14px' }}>
-          {latest
-            ? `You have ${latest.ordered_point_ids.length} stop(s) across ~${latest.estimated_minutes} minutes.`
-            : 'No route assigned yet — an admin needs to optimize a route for your truck.'}
+          {loading
+            ? 'Loading your route…'
+            : latest
+              ? `You have ${latest.ordered_point_ids.length} stop(s) across ~${latest.estimated_minutes} minutes.`
+              : 'No route assigned yet — an admin needs to optimize a route for your truck.'}
         </p>
         {latest && (
           <Link className="btn btn-primary" to="/driver/my-route">

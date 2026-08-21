@@ -6,7 +6,8 @@ import { useWastePoints } from '../../hooks/useWastePoints'
 import { useTrucks } from '../../hooks/useTrucks'
 import { useAnalytics } from '../../hooks/useAnalytics'
 import { api } from '../../services/apiClient'
-import { titleCase } from '../../utils/format'
+import { formatKg, formatPct, titleCase } from '../../utils/format'
+import { TRUCK_STATUS_LABELS, PRIORITY_LABELS } from '../../utils/constants'
 
 function useOpenReports() {
   const [reports, setReports] = useState([])
@@ -50,7 +51,7 @@ export default function Dashboard() {
         <StatCard
           label="Collected today"
           value={summaryLoading ? '…' : summary?.collected_today ?? 0}
-          sub={summary ? `${summary.collected_today_kg.toFixed(0)} kg diverted` : undefined}
+          sub={summary ? `${formatKg(summary.collected_today_kg)} diverted` : undefined}
         />
       </div>
 
@@ -61,7 +62,7 @@ export default function Dashboard() {
       <div className="grid cols-2" style={{ marginTop: 16 }}>
         <PerformanceCard title="Fleet status">
           {trucksLoading ? (
-            <p className="muted">Loading…</p>
+            <div className="spinner" />
           ) : trucks.length === 0 ? (
             <p className="empty">No trucks registered.</p>
           ) : (
@@ -71,7 +72,7 @@ export default function Dashboard() {
                   {t.registration_number}
                 </span>
                 <span className="row-value" style={{ width: 'auto' }}>
-                  {t.status.replace('_', ' ')}
+                  {TRUCK_STATUS_LABELS[t.status] || t.status}
                 </span>
                 <span className="muted" style={{ fontSize: 12 }}>
                   {t.driver_id ? 'driver assigned' : 'no driver'}
@@ -105,7 +106,7 @@ export default function Dashboard() {
       <div className="grid cols-2" style={{ marginTop: 16 }}>
         <PerformanceCard title="Live community reports">
           {reportsLoading ? (
-            <p className="muted">Loading…</p>
+            <div className="spinner" />
           ) : reports.length === 0 ? (
             <p className="empty">No open reports right now.</p>
           ) : (
@@ -119,46 +120,54 @@ export default function Dashboard() {
                   {titleCase(r.problem_type)}
                   {r.waste_point_id ? ' · linked to a point' : ''}
                 </span>
-                <span className={`badge badge-${r.priority}`}>{r.priority}</span>
+                <span className={`badge badge-${r.priority}`}>
+                  {PRIORITY_LABELS[r.priority] || r.priority}
+                </span>
               </div>
             ))
           )}
         </PerformanceCard>
 
         <PerformanceCard title="Collection trend">
-          <p className="muted" style={{ marginBottom: 8 }}>
-            {summaryLoading ? 'Loading…' : `${summary?.collected_today ?? 0} collection(s) today.`}
-          </p>
-          <div className="compare-bar">
-            <div className="compare-row">
-              <span className="row-label">Collected</span>
-              <div className="compare-track">
-                <div
-                  style={{
-                    width: '100%',
-                    background: 'var(--primary)',
-                  }}
-                />
+          {summaryLoading ? (
+            <div className="spinner" />
+          ) : (
+            <>
+              <p className="muted" style={{ marginBottom: 8 }}>
+                {summary?.collected_today ?? 0} collection(s) today.
+              </p>
+              <div className="compare-bar">
+                <div className="compare-row">
+                  <span className="row-label">Collected</span>
+                  <div className="compare-track">
+                    <div
+                      style={{
+                        width: '100%',
+                        background: 'var(--primary)',
+                      }}
+                    />
+                  </div>
+                  <span className="row-value">
+                    {formatKg(summary?.collected_today_kg)}
+                  </span>
+                </div>
+                <div className="compare-row">
+                  <span className="row-label">Rate</span>
+                  <div className="compare-track">
+                    <div
+                      style={{
+                        width: `${summary?.collection_rate_pct ?? 0}%`,
+                        background: 'var(--success)',
+                      }}
+                    />
+                  </div>
+                  <span className="row-value">
+                    {formatPct(summary?.collection_rate_pct)}
+                  </span>
+                </div>
               </div>
-              <span className="row-value">
-                {summaryLoading ? '…' : (summary?.collected_today_kg ?? 0).toFixed(0)} kg
-              </span>
-            </div>
-            <div className="compare-row">
-              <span className="row-label">Rate</span>
-              <div className="compare-track">
-                <div
-                  style={{
-                    width: `${summary?.collection_rate_pct ?? 0}%`,
-                    background: 'var(--success)',
-                  }}
-                />
-              </div>
-              <span className="row-value">
-                {summaryLoading ? '…' : (summary?.collection_rate_pct ?? 0).toFixed(0)}%
-              </span>
-            </div>
-          </div>
+            </>
+          )}
         </PerformanceCard>
       </div>
     </div>

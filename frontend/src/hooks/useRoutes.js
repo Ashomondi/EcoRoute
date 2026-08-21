@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listRoutes, optimizeRoute } from '../services/routeService'
 
+/**
+ * @returns {{
+ *   routes: import('../types/route').Route[],
+ *   loading: boolean,
+ *   error: string,
+ *   refetch: (truckId?: string) => Promise<void>,
+ *   optimize: (truckId: string) => Promise<import('../types/route').OptimizationResult>,
+ * }}
+ */
 export function useRoutes() {
   const [routes, setRoutes] = useState([])
   const [loading, setLoading] = useState(true)

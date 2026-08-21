@@ -22,11 +22,30 @@ export const REPORT_STATUS_LABELS = {
   resolved: 'Resolved',
 }
 
+export const REPORT_STATUS_BADGES = {
+  open: 'badge-warning',
+  in_progress: 'badge-medium',
+  resolved: 'badge-resolved',
+}
+
 export const TRUCK_STATUS_LABELS = {
   idle: 'Idle',
   en_route: 'En route',
   full: 'Full',
   maintenance: 'Maintenance',
+}
+
+export const ROUTE_STATUS_LABELS = {
+  planned: 'Planned',
+  active: 'Active',
+  completed: 'Completed',
+}
+
+export const PROBLEM_TYPE_LABELS = {
+  overflow: 'Overflowing bin',
+  illegal_dumping: 'Illegal dumping',
+  missed_collection: 'Missed collection',
+  other: 'Other',
 }
 
 export const PROBLEM_TYPES = [

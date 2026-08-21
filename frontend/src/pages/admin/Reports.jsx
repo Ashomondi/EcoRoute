@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../../services/apiClient'
+import { formatDateTime } from '../../utils/format'
+import { PRIORITY_LABELS, PROBLEM_TYPE_LABELS } from '../../utils/constants'
 
 function useOpenReports() {
   const [reports, setReports] = useState([])
@@ -44,13 +46,15 @@ export default function Reports() {
           {reports.map((r) => (
             <div key={r.id} className="card">
               <div className="card-head">
-                <h3>{r.problem_type.replace('_', ' ')}</h3>
-                <span className={`badge badge-${r.priority}`}>{r.priority}</span>
+                <h3>{PROBLEM_TYPE_LABELS[r.problem_type] || r.problem_type}</h3>
+                <span className={`badge badge-${r.priority}`}>
+                  {PRIORITY_LABELS[r.priority] || r.priority}
+                </span>
               </div>
               {r.description && <p>{r.description}</p>}
               <p className="muted" style={{ marginTop: 8 }}>
                 {r.waste_point_id ? 'Linked to a waste point' : 'No linked waste point'} ·{' '}
-                {new Date(r.created_at).toLocaleString()}
+                {formatDateTime(r.created_at)}
               </p>
             </div>
           ))}

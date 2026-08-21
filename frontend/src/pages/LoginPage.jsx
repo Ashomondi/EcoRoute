@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Logo from '../components/Logo'
 import { useAuth } from '../hooks/useAuth'
+import { validateEmail, validatePassword } from '../utils/validators'
 
 const DEMO_ACCOUNTS = [
   { role: 'Admin', email: 'admin@ecoroute.dev', password: 'admin123' },
@@ -22,6 +24,11 @@ export default function LoginPage() {
   async function submit(e) {
     e.preventDefault()
     setError('')
+    const err = validateEmail(email) || validatePassword(password)
+    if (err) {
+      setError(err)
+      return
+    }
     setBusy(true)
     try {
       const user = await login(email, password)
@@ -50,7 +57,7 @@ export default function LoginPage() {
     <div className="auth-wrap">
       <div className="auth-card card">
         <div className="auth-brand">
-          <span className="logo-dot" />
+          <Logo size={30} />
           <h1>EcoRoute</h1>
         </div>
         <p className="auth-tagline">Smart waste collection for cleaner cities</p>

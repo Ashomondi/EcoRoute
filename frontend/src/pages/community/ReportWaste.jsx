@@ -1,7 +1,15 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import WasteReportForm from '../../components/Waste/WasteReportForm'
 import { useWastePoints } from '../../hooks/useWastePoints'
 import { useReports } from '../../hooks/useReports'
+import { formatDateTime } from '../../utils/format'
+import {
+  PRIORITY_LABELS,
+  PROBLEM_TYPE_LABELS,
+  REPORT_STATUS_BADGES,
+  REPORT_STATUS_LABELS,
+} from '../../utils/constants'
 
 export default function ReportWaste() {
   const { points, loading, error } = useWastePoints()
@@ -9,6 +17,7 @@ export default function ReportWaste() {
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState('')
   const [submitted, setSubmitted] = useState(null)
+  const [formKey, setFormKey] = useState(0)
 
   async function handleSubmit(input) {
     setFormError('')
@@ -21,6 +30,11 @@ export default function ReportWaste() {
     } finally {
       setBusy(false)
     }
+  }
+
+  function reportAnother() {
+    setSubmitted(null)
+    setFormKey((k) => k + 1)
   }
 
   if (submitted) {
@@ -36,17 +50,28 @@ export default function ReportWaste() {
             report is now open.
           </p>
           <p>
-            Problem: <strong>{submitted.problem_type.replace('_', ' ')}</strong> · Priority{' '}
-            <span className={`badge badge-${submitted.priority}`}>{submitted.priority}</span>
+            Reference <strong>#{submitted.id.slice(0, 8)}</strong>
           </p>
-          <button
-            className="btn btn-outline"
-            type="button"
-            style={{ marginTop: 16 }}
-            onClick={() => setSubmitted(null)}
-          >
-            Report another issue
-          </button>
+          <p style={{ marginTop: 8 }}>
+            {PROBLEM_TYPE_LABELS[submitted.problem_type] || submitted.problem_type} ·{' '}
+            <span className={`badge badge-${submitted.priority}`}>
+              {PRIORITY_LABELS[submitted.priority] || submitted.priority}
+            </span>{' '}
+            <span className={`badge ${REPORT_STATUS_BADGES[submitted.status] || 'badge-warning'}`}>
+              {REPORT_STATUS_LABELS[submitted.status] || submitted.status}
+            </span>
+          </p>
+          <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+            Submitted {formatDateTime(submitted.created_at)}
+          </p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button className="btn btn-outline" type="button" onClick={reportAnother}>
+              Report another issue
+            </button>
+            <Link className="btn btn-primary" to="/community">
+              Back to dashboard
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -66,7 +91,7 @@ export default function ReportWaste() {
         {loading ? (
           <div className="spinner" />
         ) : (
-          <WasteReportForm wastePoints={points} onSubmit={handleSubmit} busy={busy} />
+          <WasteReportForm key={formKey} wastePoints={points} onSubmit={handleSubmit} busy={busy} />
         )}
       </div>
     </div>

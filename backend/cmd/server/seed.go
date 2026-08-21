@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
+	"math"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -50,10 +53,49 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 	if err != nil {
 		return err
 	}
-	if _, err := seedTruck(ctx, pool, "KCA 123A", 5000, driverID, -0.1022, 34.7617); err != nil {
+	truckLat, truckLng := -0.1022, 34.7617
+	truckID, err := seedTruck(ctx, pool, "KCA 123A", 5000, driverID, truckLat, truckLng)
+	if err != nil {
 		return err
 	}
 	log.Println("seed: truck ok")
+
+	// Seed a scheduled (planned) route so residents can see upcoming collections.
+	if _, err := seedRoute(ctx, pool, truckID, models.RouteStatusPlanned,
+		[]seedRouteStop{
+			{id: pointIDs["Kondele"], lat: -0.0900, lng: 34.8000},
+			{id: pointIDs["Manyatta"], lat: -0.0950, lng: 34.7900},
+			{id: pointIDs["Market A"], lat: -0.0950, lng: 34.7300},
+			{id: pointIDs["Nyalenda"], lat: -0.1100, lng: 34.7200},
+		}, truckLat, truckLng); err != nil {
+		return err
+	}
+	log.Println("seed: scheduled route ok")
+
+	// Seed a completed route with past collection records for history.
+	completedRouteID, err := seedRoute(ctx, pool, truckID, models.RouteStatusCompleted,
+		[]seedRouteStop{
+			{id: pointIDs["Kondele"], lat: -0.0900, lng: 34.8000},
+			{id: pointIDs["Market A"], lat: -0.0950, lng: 34.7300},
+		}, truckLat, truckLng)
+	if err != nil {
+		return err
+	}
+	for _, c := range []struct {
+		pointID string
+		outcome string
+		kg      float64
+		daysAgo int
+	}{
+		{pointIDs["Kondele"], models.OutcomeCollected, 920, 1},
+		{pointIDs["Market A"], models.OutcomeCollected, 760, 2},
+		{pointIDs["Nyalenda"], models.OutcomeFailed, 880, 3},
+	} {
+		if err := seedCollection(ctx, pool, completedRouteID, truckID, c.pointID, c.outcome, c.kg, c.daysAgo); err != nil {
+			return err
+		}
+	}
+	log.Println("seed: collection history ok")
 
 	communityID, err := userIDByEmail(ctx, pool, "community@ecoroute.dev")
 	if err != nil {
@@ -163,4 +205,65 @@ func userIDByEmail(ctx context.Context, pool *pgxpool.Pool, email string) (strin
 	var id string
 	err := pool.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&id)
 	return id, err
+}
+
+type seedRouteStop struct {
+	id  string
+	lat float64
+	lng float64
+}
+
+func seedRoute(ctx context.Context, pool *pgxpool.Pool, truckID, status string, stops []seedRouteStop, startLat, startLng float64) (string, error) {
+	var existing string
+	err := pool.QueryRow(ctx,
+		`SELECT id FROM routes WHERE truck_id = $1 AND status = $2 ORDER BY created_at DESC LIMIT 1`,
+		truckID, status).Scan(&existing)
+	if err == nil {
+		return existing, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return "", err
+	}
+
+	ids := make([]string, len(stops))
+	distance := 0.0
+	prevLat, prevLng := startLat, startLng
+	for i, s := range stops {
+		ids[i] = s.id
+		distance += utils.HaversineKm(prevLat, prevLng, s.lat, s.lng)
+		prevLat, prevLng = s.lat, s.lng
+	}
+	minutes := int(math.Round(distance/25.0*60 + 10.0*float64(len(stops))))
+	fuel := distance*0.2 + 0.1*float64(len(stops))
+	pointsJSON, err := json.Marshal(ids)
+	if err != nil {
+		return "", err
+	}
+
+	var id string
+	err = pool.QueryRow(ctx,
+		`INSERT INTO routes (truck_id, ordered_point_ids, distance_km, baseline_distance_km, estimated_fuel_l, estimated_minutes, status)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+		truckID, string(pointsJSON), distance, distance, fuel, minutes, status).Scan(&id)
+	return id, err
+}
+
+func seedCollection(ctx context.Context, pool *pgxpool.Pool, routeID, truckID, pointID, outcome string, kg float64, daysAgo int) error {
+	var exists bool
+	err := pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM collection_records WHERE route_id = $1 AND waste_point_id = $2 AND outcome = $3)`,
+		routeID, pointID, outcome).Scan(&exists)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+
+	collectedAt := time.Now().AddDate(0, 0, -daysAgo)
+	_, err = pool.Exec(ctx,
+		`INSERT INTO collection_records (route_id, waste_point_id, truck_id, outcome, estimated_kg, collected_at)
+		 VALUES ($1, $2, $3, $4, $5, $6)`,
+		routeID, pointID, truckID, outcome, kg, collectedAt)
+	return err
 }

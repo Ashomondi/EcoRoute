@@ -2,6 +2,7 @@ import { useState } from 'react'
 import TruckCard from '../../components/Trucks/TruckCard'
 import { useTrucks } from '../../hooks/useTrucks'
 import { createTruck } from '../../services/truckService'
+import { validateTruck } from '../../utils/validators'
 
 export default function Trucks() {
   const { trucks, loading, error, refetch } = useTrucks()
@@ -13,6 +14,11 @@ export default function Trucks() {
   async function submit(e) {
     e.preventDefault()
     setMsg('')
+    const err = validateTruck({ registration_number: reg, capacity_kg: capacity })
+    if (err) {
+      setMsg(err)
+      return
+    }
     try {
       await createTruck({ registration_number: reg, capacity_kg: parseFloat(capacity) })
       setShowForm(false)

@@ -6,7 +6,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { useWastePoints } from '../../hooks/useWastePoints'
 import { useCollections } from '../../hooks/useCollections'
 import { useReports } from '../../hooks/useReports'
-import { titleCase, timeAgo } from '../../utils/format'
+import { formatNumber, titleCase, timeAgo } from '../../utils/format'
+import { PRIORITY_LABELS } from '../../utils/constants'
 
 export default function CommunityDashboard() {
   const { user } = useAuth()
@@ -25,7 +26,7 @@ export default function CommunityDashboard() {
         <StatCard label="Reports made" value={summary ? summary.reports_made : '…'} />
         <StatCard
           label="Waste diverted"
-          value={summary ? (summary.waste_diverted_kg ?? 0).toFixed(0) : '…'}
+          value={summary ? formatNumber(summary.waste_diverted_kg) : '…'}
           unit="kg"
         />
         <StatCard label="Community rank" value={summary ? `${summary.rank}` : '…'} sub="among your neighbors" />
@@ -96,10 +97,12 @@ export default function CommunityDashboard() {
                       r.status === 'resolved' ? 'var(--success)' : 'var(--warning)',
                   }}
                 />
-                <span style={{ flex: 1 }}>
-                  {titleCase(r.problem_type)} ·{' '}
-                  <span className={`badge badge-${r.priority}`}>{r.priority}</span>
-                </span>
+                  <span style={{ flex: 1 }}>
+                    {titleCase(r.problem_type)} ·{' '}
+                    <span className={`badge badge-${r.priority}`}>
+                      {PRIORITY_LABELS[r.priority] || r.priority}
+                    </span>
+                  </span>
                 <span className="muted" style={{ fontSize: 12 }}>
                   {timeAgo(r.created_at)}
                 </span>

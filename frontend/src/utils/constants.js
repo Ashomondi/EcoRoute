@@ -29,6 +29,19 @@ export const TRUCK_STATUS_LABELS = {
   maintenance: 'Maintenance',
 }
 
+export const ROUTE_STATUS_LABELS = {
+  planned: 'Planned',
+  active: 'Active',
+  completed: 'Completed',
+}
+
+export const PROBLEM_TYPE_LABELS = {
+  overflow: 'Overflowing bin',
+  illegal_dumping: 'Illegal dumping',
+  missed_collection: 'Missed collection',
+  other: 'Other',
+}
+
 export const PROBLEM_TYPES = [
   { value: 'overflow', label: 'Overflowing bin' },
   { value: 'illegal_dumping', label: 'Illegal dumping' },

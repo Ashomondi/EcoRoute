@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getCommunityActivity, getCommunitySummary } from '../services/collectionService'
 
+/**
+ * @returns {{
+ *   summary: import('../types/community').CommunitySummary|null,
+ *   activity: import('../types/community').ActivityItem[],
+ *   loading: boolean,
+ *   error: string,
+ *   refetch: () => Promise<void>,
+ * }}
+ */
 export function useCollections() {
   const [summary, setSummary] = useState(null)
   const [activity, setActivity] = useState([])

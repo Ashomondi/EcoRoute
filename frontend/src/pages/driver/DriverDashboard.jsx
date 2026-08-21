@@ -3,7 +3,7 @@ import StatCard from '../../components/Dashboard/StatCard'
 import { useAuth } from '../../hooks/useAuth'
 import { useTrucks } from '../../hooks/useTrucks'
 import { useRoutes } from '../../hooks/useRoutes'
-import { titleCase } from '../../utils/format'
+import { formatNumber, titleCase } from '../../utils/format'
 
 export default function DriverDashboard() {
   const { user } = useAuth()
@@ -33,7 +33,7 @@ export default function DriverDashboard() {
         />
         <StatCard
           label="Route distance"
-          value={latest ? latest.distance_km.toFixed(1) : '—'}
+          value={latest ? formatNumber(latest.distance_km, 1) : '—'}
           unit="km"
         />
       </div>

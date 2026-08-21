@@ -1,9 +1,13 @@
+export function formatNumber(n, digits = 0) {
+  return (n ?? 0).toFixed(digits)
+}
+
 export function formatKm(km) {
-  return `${(km ?? 0).toFixed(1)} km`
+  return `${formatNumber(km, 1)} km`
 }
 
 export function formatKg(kg) {
-  return `${(kg ?? 0).toFixed(0)} kg`
+  return `${formatNumber(kg)} kg`
 }
 
 export function formatPct(pct) {
@@ -12,6 +16,10 @@ export function formatPct(pct) {
 
 export function formatDate(iso) {
   return iso ? new Date(iso).toLocaleDateString() : '—'
+}
+
+export function formatDateTime(iso) {
+  return iso ? new Date(iso).toLocaleString() : '—'
 }
 
 export function timeAgo(iso) {

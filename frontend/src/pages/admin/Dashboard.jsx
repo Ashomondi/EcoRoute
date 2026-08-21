@@ -6,7 +6,8 @@ import { useWastePoints } from '../../hooks/useWastePoints'
 import { useTrucks } from '../../hooks/useTrucks'
 import { useAnalytics } from '../../hooks/useAnalytics'
 import { api } from '../../services/apiClient'
-import { titleCase } from '../../utils/format'
+import { formatKg, formatPct, titleCase } from '../../utils/format'
+import { TRUCK_STATUS_LABELS, PRIORITY_LABELS } from '../../utils/constants'
 
 function useOpenReports() {
   const [reports, setReports] = useState([])
@@ -50,7 +51,7 @@ export default function Dashboard() {
         <StatCard
           label="Collected today"
           value={summaryLoading ? '…' : summary?.collected_today ?? 0}
-          sub={summary ? `${summary.collected_today_kg.toFixed(0)} kg diverted` : undefined}
+          sub={summary ? `${formatKg(summary.collected_today_kg)} diverted` : undefined}
         />
       </div>
 
@@ -71,7 +72,7 @@ export default function Dashboard() {
                   {t.registration_number}
                 </span>
                 <span className="row-value" style={{ width: 'auto' }}>
-                  {t.status.replace('_', ' ')}
+                  {TRUCK_STATUS_LABELS[t.status] || t.status}
                 </span>
                 <span className="muted" style={{ fontSize: 12 }}>
                   {t.driver_id ? 'driver assigned' : 'no driver'}
@@ -119,7 +120,9 @@ export default function Dashboard() {
                   {titleCase(r.problem_type)}
                   {r.waste_point_id ? ' · linked to a point' : ''}
                 </span>
-                <span className={`badge badge-${r.priority}`}>{r.priority}</span>
+                <span className={`badge badge-${r.priority}`}>
+                  {PRIORITY_LABELS[r.priority] || r.priority}
+                </span>
               </div>
             ))
           )}
@@ -145,7 +148,7 @@ export default function Dashboard() {
                     />
                   </div>
                   <span className="row-value">
-                    {(summary?.collected_today_kg ?? 0).toFixed(0)} kg
+                    {formatKg(summary?.collected_today_kg)}
                   </span>
                 </div>
                 <div className="compare-row">
@@ -159,7 +162,7 @@ export default function Dashboard() {
                     />
                   </div>
                   <span className="row-value">
-                    {(summary?.collection_rate_pct ?? 0).toFixed(0)}%
+                    {formatPct(summary?.collection_rate_pct)}
                   </span>
                 </div>
               </div>

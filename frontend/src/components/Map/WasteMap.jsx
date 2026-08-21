@@ -5,6 +5,16 @@ import RouteLine from './RouteLine'
 
 const KISUMU = [-0.1022, 34.7617]
 
+/**
+ * @param {{
+ *   points?: import('../../types/wastePoint').WastePoint[],
+ *   route?: import('../../types/wastePoint').WastePoint[],
+ *   onSelectPoint?: (point: import('../../types/wastePoint').WastePoint) => void,
+ *   center?: [number, number],
+ *   zoom?: number,
+ *   height?: string,
+ * }} props
+ */
 export default function WasteMap({ points = [], route, onSelectPoint, center, zoom, height }) {
   return (
     <div className="map-container" style={{ height: height || '420px' }}>

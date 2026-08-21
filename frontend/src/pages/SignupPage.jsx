@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { validateSignup } from '../utils/validators'
 
 export default function SignupPage() {
   const { register } = useAuth()
@@ -16,12 +17,9 @@ export default function SignupPage() {
   async function submit(e) {
     e.preventDefault()
     setError('')
-    if (password !== confirm) {
-      setError('Passwords do not match')
-      return
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    const err = validateSignup({ name, email, password, confirm })
+    if (err) {
+      setError(err)
       return
     }
     setBusy(true)

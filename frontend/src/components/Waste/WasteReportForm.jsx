@@ -3,6 +3,13 @@ import { PROBLEM_TYPES } from '../../utils/constants'
 import { validateReport } from '../../utils/validators'
 import { uploadPhoto } from '../../services/reportService'
 
+/**
+ * @param {{
+ *   wastePoints?: import('../../types/wastePoint').WastePoint[],
+ *   onSubmit: (input: import('../../types/report').ReportInput) => Promise<void>,
+ *   busy?: boolean,
+ * }} props
+ */
 export default function WasteReportForm({ wastePoints = [], onSubmit, busy }) {
   const [problemType, setProblemType] = useState('')
   const [description, setDescription] = useState('')

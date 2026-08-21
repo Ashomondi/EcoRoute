@@ -4,7 +4,8 @@ import RouteSummary from '../../components/Routes/RouteSummary'
 import { useRoutes } from '../../hooks/useRoutes'
 import { getRouteStops, updateRouteStatus } from '../../services/routeService'
 import { markCollected } from '../../services/collectionService'
-import { titleCase } from '../../utils/format'
+import { formatKm, formatPct, titleCase } from '../../utils/format'
+import { ROUTE_STATUS_LABELS } from '../../utils/constants'
 
 function haversineKm(a, b) {
   const toRad = Math.PI / 180
@@ -107,7 +108,9 @@ export default function MyRoute() {
     <div>
       <div className="page-header">
         <h1>My Route</h1>
-        <span className={`badge badge-${route.status}`}>{titleCase(route.status)}</span>
+        <span className={`badge badge-${route.status}`}>
+          {ROUTE_STATUS_LABELS[route.status] || route.status}
+        </span>
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
@@ -119,7 +122,7 @@ export default function MyRoute() {
           {stopsLoading
             ? 'Loading stops…'
             : `Progress: ${done} of ${stops.length} collected${
-                remainingKm > 0 ? ` · ~${remainingKm.toFixed(1)} km left` : ''
+                remainingKm > 0 ? ` · ~${formatKm(remainingKm)} left` : ''
               }`}
         </p>
         {route.status === 'planned' && (
@@ -156,7 +159,7 @@ export default function MyRoute() {
                   </h3>
                   <span className={`badge badge-${s.waste_point.status}`}>{titleCase(s.waste_point.status)}</span>
                 </div>
-                <p className="muted">Fill level: {s.waste_point.current_level_pct}%</p>
+                <p className="muted">Fill level: {formatPct(s.waste_point.current_level_pct)}</p>
 
                 {route.status === 'active' && !collected[s.waste_point.id] && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>

@@ -1,6 +1,7 @@
 import WasteLevelIndicator from '../../components/Waste/WasteLevelIndicator'
 import { useWastePoints } from '../../hooks/useWastePoints'
-import { formatDate } from '../../utils/format'
+import { formatDate, formatPct } from '../../utils/format'
+import { STATUS_LABELS } from '../../utils/constants'
 
 export default function CollectionSchedule() {
   const { points, loading, error } = useWastePoints()
@@ -34,10 +35,10 @@ export default function CollectionSchedule() {
               <div key={p.id} className="card">
                 <div className="card-head">
                   <h3>{p.name}</h3>
-                  <span className={`badge badge-${p.status}`}>{p.status}</span>
+                  <span className={`badge badge-${p.status}`}>{STATUS_LABELS[p.status] || p.status}</span>
                 </div>
                 <p className="muted">
-                  Level: {p.current_level_pct}% · Last collected: {formatDate(p.last_collected_at)}
+                  Level: {formatPct(p.current_level_pct)} · Last collected: {formatDate(p.last_collected_at)}
                 </p>
                 <WasteLevelIndicator level={p.current_level_pct} status={p.status} />
               </div>

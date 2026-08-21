@@ -2,6 +2,7 @@ import { useState } from 'react'
 import WasteReportForm from '../../components/Waste/WasteReportForm'
 import { useWastePoints } from '../../hooks/useWastePoints'
 import { useReports } from '../../hooks/useReports'
+import { PRIORITY_LABELS, PROBLEM_TYPE_LABELS } from '../../utils/constants'
 
 export default function ReportWaste() {
   const { points, loading, error } = useWastePoints()
@@ -36,8 +37,11 @@ export default function ReportWaste() {
             report is now open.
           </p>
           <p>
-            Problem: <strong>{submitted.problem_type.replace('_', ' ')}</strong> · Priority{' '}
-            <span className={`badge badge-${submitted.priority}`}>{submitted.priority}</span>
+            Problem: <strong>{PROBLEM_TYPE_LABELS[submitted.problem_type] || submitted.problem_type}</strong> ·{' '}
+            Priority{' '}
+            <span className={`badge badge-${submitted.priority}`}>
+              {PRIORITY_LABELS[submitted.priority] || submitted.priority}
+            </span>
           </p>
           <button
             className="btn btn-outline"

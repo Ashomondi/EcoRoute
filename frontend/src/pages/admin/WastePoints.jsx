@@ -3,6 +3,7 @@ import WasteMap from '../../components/Map/WasteMap'
 import WastePointCard from '../../components/Waste/WastePointCard'
 import { useWastePoints } from '../../hooks/useWastePoints'
 import { createWastePoint } from '../../services/wasteService'
+import { validateWastePoint } from '../../utils/validators'
 
 export default function WastePoints() {
   const { points, loading, error, refetch } = useWastePoints()
@@ -16,6 +17,11 @@ export default function WastePoints() {
   async function submit(e) {
     e.preventDefault()
     setMsg('')
+    const err = validateWastePoint({ name, latitude: lat, longitude: lng, current_level_pct: level })
+    if (err) {
+      setMsg(err)
+      return
+    }
     try {
       await createWastePoint({
         name,

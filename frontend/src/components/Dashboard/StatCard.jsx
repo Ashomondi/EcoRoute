@@ -1,3 +1,11 @@
+/**
+ * @param {{
+ *   label: string,
+ *   value: import('react').ReactNode,
+ *   unit?: string,
+ *   sub?: import('react').ReactNode,
+ * }} props
+ */
 export default function StatCard({ label, value, unit, sub }) {
   return (
     <div className="card stat-card">

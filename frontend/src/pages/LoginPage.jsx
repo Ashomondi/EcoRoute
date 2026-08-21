@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { validateEmail, validatePassword } from '../utils/validators'
 
 const DEMO_ACCOUNTS = [
   { role: 'Admin', email: 'admin@ecoroute.dev', password: 'admin123' },
@@ -22,6 +23,11 @@ export default function LoginPage() {
   async function submit(e) {
     e.preventDefault()
     setError('')
+    const err = validateEmail(email) || validatePassword(password)
+    if (err) {
+      setError(err)
+      return
+    }
     setBusy(true)
     try {
       const user = await login(email, password)

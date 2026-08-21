@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listWastePoints } from '../services/wasteService'
 
+/**
+ * @returns {{
+ *   points: import('../types/wastePoint').WastePoint[],
+ *   loading: boolean,
+ *   error: string,
+ *   refetch: () => Promise<void>,
+ * }}
+ */
 export function useWastePoints() {
   const [points, setPoints] = useState([])
   const [loading, setLoading] = useState(true)

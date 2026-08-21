@@ -1,5 +1,10 @@
-import { titleCase } from '../../utils/format'
+import { formatNumber, formatPct, titleCase } from '../../utils/format'
 
+/**
+ * @param {{
+ *   result: import('../../types/route').OptimizationResult,
+ * }} props
+ */
 export default function OptimizationResult({ result }) {
   if (!result) {
     return null
@@ -7,10 +12,10 @@ export default function OptimizationResult({ result }) {
   return (
     <div>
       <div className="grid cols-4" style={{ marginBottom: 16 }}>
-        <Mini label="Optimized" value={result.distance_km.toFixed(1)} unit="km" />
-        <Mini label="Baseline" value={result.baseline_distance_km.toFixed(1)} unit="km" />
-        <Mini label="Distance saved" value={result.distance_saved_km.toFixed(1)} unit="km" />
-        <Mini label="Fuel saved" value={result.fuel_saved_l.toFixed(1)} unit="L" />
+        <Mini label="Optimized" value={formatNumber(result.distance_km, 1)} unit="km" />
+        <Mini label="Baseline" value={formatNumber(result.baseline_distance_km, 1)} unit="km" />
+        <Mini label="Distance saved" value={formatNumber(result.distance_saved_km, 1)} unit="km" />
+        <Mini label="Fuel saved" value={formatNumber(result.fuel_saved_l, 1)} unit="L" />
       </div>
 
       <div className="card">
@@ -21,7 +26,7 @@ export default function OptimizationResult({ result }) {
           <ol className="stop-list">
             {result.stops.map((s) => (
               <li key={s.waste_point.id}>
-                <strong>{s.order}.</strong> {s.waste_point.name} — {s.waste_point.current_level_pct}%
+                <strong>{s.order}.</strong> {s.waste_point.name} — {formatPct(s.waste_point.current_level_pct)}
                 <span className={`badge badge-${s.waste_point.status}`} style={{ marginLeft: 8 }}>
                   {titleCase(s.waste_point.status)}
                 </span>
@@ -31,7 +36,7 @@ export default function OptimizationResult({ result }) {
         )}
         {result.time_saved_minutes > 0 && (
           <p className="muted" style={{ marginTop: 12 }}>
-            ~{result.time_saved_minutes} minutes faster than the naive order.
+            ~{formatNumber(result.time_saved_minutes)} minutes faster than the naive order.
           </p>
         )}
       </div>
@@ -39,13 +44,20 @@ export default function OptimizationResult({ result }) {
   )
 }
 
+/**
+ * @param {{
+ *   label: string,
+ *   value: string|number,
+ *   unit?: string,
+ * }} props
+ */
 function Mini({ label, value, unit }) {
   return (
     <div className="card stat-card">
       <p className="muted stat-label">{label}</p>
       <p className="stat-value">
         {value}
-        <span className="stat-unit">{unit}</span>
+        {unit && <span className="stat-unit">{unit}</span>}
       </p>
     </div>
   )

@@ -1,174 +1,57 @@
-import { useCallback, useEffect, useState } from 'react'
-import WasteMap from '../../components/Map/WasteMap'
+import { useState } from 'react'
 import StatCard from '../../components/Dashboard/StatCard'
-import PerformanceCard from '../../components/Dashboard/PerformanceCard'
-import { useWastePoints } from '../../hooks/useWastePoints'
-import { useTrucks } from '../../hooks/useTrucks'
+import WasteStatus from '../../components/Dashboard/WasteStatus'
+import WasteMap from '../../components/Map/WasteMap'
 import { useAnalytics } from '../../hooks/useAnalytics'
-import { api } from '../../services/apiClient'
-import { formatKg, formatPct, titleCase } from '../../utils/format'
-import { TRUCK_STATUS_LABELS, PRIORITY_LABELS } from '../../utils/constants'
-
-function useOpenReports() {
-  const [reports, setReports] = useState([])
-  const [loading, setLoading] = useState(true)
-  const refetch = useCallback(async () => {
-    setLoading(true)
-    try {
-      setReports(await api.get('/reports?status=open'))
-    } catch {
-      setReports([])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-  useEffect(() => {
-    refetch()
-  }, [refetch])
-  return { reports, loading, refetch }
-}
+import { useWastePoints } from '../../hooks/useWastePoints'
+import { formatKg, formatKm, formatNumber, formatPercent } from '../../utils/format'
 
 export default function Dashboard() {
-  const { points, loading: pointsLoading, error: pointsError } = useWastePoints()
-  const { trucks, loading: trucksLoading } = useTrucks()
   const { summary, loading: summaryLoading } = useAnalytics()
-  const { reports, loading: reportsLoading } = useOpenReports()
+  const { wastePoints, loading: pointsLoading } = useWastePoints()
+  const [selected, setSelected] = useState(null)
 
-  const critical = points.filter((p) => p.status === 'critical').length
-  const activeTrucks = trucks.filter((t) => t.status === 'en_route').length
+  const stats = [
+    { label: 'Collected today', value: summaryLoading ? '…' : formatNumber(summary?.collected_today), sub: `${formatKg(summary?.collected_today_kg)} today` },
+    { label: 'Recycled', value: summaryLoading ? '…' : formatKg(summary?.recycled_kg), sub: 'from recycling records' },
+    { label: 'Landfill diverted', value: summaryLoading ? '…' : formatKg(summary?.landfill_diverted_kg), sub: 'kept out of landfill' },
+    { label: 'Collection rate', value: summaryLoading ? '…' : formatPercent(summary?.collection_rate_pct), sub: 'across all records' },
+    { label: 'Distance saved', value: summaryLoading ? '…' : formatKm(summary?.distance_saved_km), sub: `${formatKm(summary?.total_distance_km)} total` },
+    { label: 'Fuel saved', value: summaryLoading ? '…' : `${formatNumber(summary?.fuel_saved_l, 1)} L`, sub: 'vs naive routes' },
+    { label: 'CO₂ avoided', value: summaryLoading ? '…' : `${formatNumber(summary?.co2_avoided_kg, 1)} kg`, sub: 'fuel + recycling' },
+    { label: 'Routes run', value: summaryLoading ? '…' : formatNumber(summary?.total_routes), sub: 'all-time' },
+  ]
 
   return (
     <div>
       <div className="page-header">
-        <h1>Operations Dashboard</h1>
-        <p className="muted">Live city overview</p>
+        <h1>Operations dashboard</h1>
+        <span className="badge badge-ok">
+          <span className="status-dot ok" /> Live
+        </span>
       </div>
 
-      <div className="grid cols-4" style={{ marginBottom: 16 }}>
-        <StatCard label="Waste points" value={pointsLoading ? '…' : points.length} />
-        <StatCard label="Critical" value={pointsLoading ? '…' : critical} sub="need collection soon" />
-        <StatCard label="Active trucks" value={trucksLoading ? '…' : activeTrucks} />
-        <StatCard
-          label="Collected today"
-          value={summaryLoading ? '…' : summary?.collected_today ?? 0}
-          sub={summary ? `${formatKg(summary.collected_today_kg)} diverted` : undefined}
-        />
+      <div className="grid cols-4" style={{ marginBottom: 20 }}>
+        {stats.map((s) => (
+          <StatCard key={s.label} label={s.label} value={s.value} sub={s.sub} />
+        ))}
       </div>
 
-      {pointsError && <p className="error">{pointsError}</p>}
-
-      <WasteMap points={points} />
-
-      <div className="grid cols-2" style={{ marginTop: 16 }}>
-        <PerformanceCard title="Fleet status">
-          {trucksLoading ? (
-            <div className="spinner" />
-          ) : trucks.length === 0 ? (
-            <p className="empty">No trucks registered.</p>
-          ) : (
-            trucks.map((t) => (
-              <div key={t.id} className="compare-row" style={{ marginBottom: 8 }}>
-                <span className="row-label" style={{ width: 90, textAlign: 'left' }}>
-                  {t.registration_number}
-                </span>
-                <span className="row-value" style={{ width: 'auto' }}>
-                  {TRUCK_STATUS_LABELS[t.status] || t.status}
-                </span>
-                <span className="muted" style={{ fontSize: 12 }}>
-                  {t.driver_id ? 'driver assigned' : 'no driver'}
-                </span>
-              </div>
-            ))
-          )}
-        </PerformanceCard>
-
-        <PerformanceCard title="Priority hotspots">
-          {points.filter((p) => p.status !== 'ok').length === 0 ? (
-            <p className="empty">All points are healthy.</p>
-          ) : (
-            points
-              .filter((p) => p.status !== 'ok')
-              .map((p) => (
-                <div key={p.id} className="compare-row" style={{ marginBottom: 8 }}>
-                  <span className="status-dot" style={{ background: p.status === 'critical' ? 'var(--danger)' : 'var(--warning)' }} />
-                  <span className="row-label" style={{ width: 'auto', textAlign: 'left' }}>
-                    {p.name}
-                  </span>
-                  <span className="row-value" style={{ width: 'auto' }}>
-                    {p.current_level_pct}%
-                  </span>
-                </div>
-              ))
-          )}
-        </PerformanceCard>
-      </div>
-
-      <div className="grid cols-2" style={{ marginTop: 16 }}>
-        <PerformanceCard title="Live community reports">
-          {reportsLoading ? (
-            <div className="spinner" />
-          ) : reports.length === 0 ? (
-            <p className="empty">No open reports right now.</p>
-          ) : (
-            reports.slice(0, 6).map((r) => (
-              <div key={r.id} className="activity-item">
-                <span
-                  className="status-dot"
-                  style={{ background: r.priority === 'high' ? 'var(--danger)' : 'var(--warning)' }}
-                />
-                <span style={{ flex: 1 }}>
-                  {titleCase(r.problem_type)}
-                  {r.waste_point_id ? ' · linked to a point' : ''}
-                </span>
-                <span className={`badge badge-${r.priority}`}>
-                  {PRIORITY_LABELS[r.priority] || r.priority}
-                </span>
-              </div>
-            ))
-          )}
-        </PerformanceCard>
-
-        <PerformanceCard title="Collection trend">
-          {summaryLoading ? (
-            <div className="spinner" />
-          ) : (
-            <>
-              <p className="muted" style={{ marginBottom: 8 }}>
-                {summary?.collected_today ?? 0} collection(s) today.
-              </p>
-              <div className="compare-bar">
-                <div className="compare-row">
-                  <span className="row-label">Collected</span>
-                  <div className="compare-track">
-                    <div
-                      style={{
-                        width: '100%',
-                        background: 'var(--primary)',
-                      }}
-                    />
-                  </div>
-                  <span className="row-value">
-                    {formatKg(summary?.collected_today_kg)}
-                  </span>
-                </div>
-                <div className="compare-row">
-                  <span className="row-label">Rate</span>
-                  <div className="compare-track">
-                    <div
-                      style={{
-                        width: `${summary?.collection_rate_pct ?? 0}%`,
-                        background: 'var(--success)',
-                      }}
-                    />
-                  </div>
-                  <span className="row-value">
-                    {formatPct(summary?.collection_rate_pct)}
-                  </span>
-                </div>
-              </div>
-            </>
-          )}
-        </PerformanceCard>
+      <div className="grid cols-3" style={{ marginBottom: 20 }}>
+        <div className="card" style={{ gridColumn: 'span 2' }}>
+          <div className="card-head">
+            <h3>Live map</h3>
+          </div>
+          <p className="sub">Waste points colour-coded by status.</p>
+          {pointsLoading ? <div className="spinner" /> : <WasteMap wastePoints={wastePoints} selectedPointId={selected?.id} onSelectPoint={setSelected} />}
+        </div>
+        <div className="card">
+          <div className="card-head">
+            <h3>Waste status</h3>
+          </div>
+          <p className="sub">Click a point to highlight it on the map.</p>
+          {pointsLoading ? <div className="spinner" /> : <WasteStatus wastePoints={wastePoints} onSelect={setSelected} />}
+        </div>
       </div>
     </div>
   )

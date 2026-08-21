@@ -22,6 +22,12 @@ export const REPORT_STATUS_LABELS = {
   resolved: 'Resolved',
 }
 
+export const REPORT_STATUS_BADGES = {
+  open: 'badge-warning',
+  in_progress: 'badge-medium',
+  resolved: 'badge-resolved',
+}
+
 export const TRUCK_STATUS_LABELS = {
   idle: 'Idle',
   en_route: 'En route',

@@ -6,8 +6,13 @@ import { useAuth } from '../../hooks/useAuth'
 import { useWastePoints } from '../../hooks/useWastePoints'
 import { useCollections } from '../../hooks/useCollections'
 import { useReports } from '../../hooks/useReports'
-import { formatNumber, titleCase, timeAgo } from '../../utils/format'
-import { PRIORITY_LABELS } from '../../utils/constants'
+import { formatNumber, timeAgo } from '../../utils/format'
+import {
+  PRIORITY_LABELS,
+  PROBLEM_TYPE_LABELS,
+  REPORT_STATUS_BADGES,
+  REPORT_STATUS_LABELS,
+} from '../../utils/constants'
 
 export default function CommunityDashboard() {
   const { user } = useAuth()
@@ -94,15 +99,25 @@ export default function CommunityDashboard() {
                   className="status-dot"
                   style={{
                     background:
-                      r.status === 'resolved' ? 'var(--success)' : 'var(--warning)',
+                      r.status === 'resolved'
+                        ? 'var(--success)'
+                        : r.status === 'in_progress'
+                          ? 'var(--info)'
+                          : 'var(--warning)',
                   }}
                 />
-                  <span style={{ flex: 1 }}>
-                    {titleCase(r.problem_type)} ·{' '}
-                    <span className={`badge badge-${r.priority}`}>
-                      {PRIORITY_LABELS[r.priority] || r.priority}
-                    </span>
+                <span style={{ flex: 1 }}>
+                  {PROBLEM_TYPE_LABELS[r.problem_type] || r.problem_type}
+                  {r.photo_url && <span className="badge badge-low" style={{ marginLeft: 6 }}>Photo</span>}
+                  {' · '}
+                  <span className={`badge ${REPORT_STATUS_BADGES[r.status] || 'badge-warning'}`}>
+                    {REPORT_STATUS_LABELS[r.status] || r.status}
                   </span>
+                  {' · '}
+                  <span className={`badge badge-${r.priority}`}>
+                    {PRIORITY_LABELS[r.priority] || r.priority}
+                  </span>
+                </span>
                 <span className="muted" style={{ fontSize: 12 }}>
                   {timeAgo(r.created_at)}
                 </span>

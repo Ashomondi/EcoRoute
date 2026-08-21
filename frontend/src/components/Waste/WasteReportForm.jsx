@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { PROBLEM_TYPES } from '../../utils/constants'
+import { formatNumber } from '../../utils/format'
 import { validateReport } from '../../utils/validators'
 import { uploadPhoto } from '../../services/reportService'
+
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024
 
 /**
  * @param {{
@@ -17,21 +20,29 @@ export default function WasteReportForm({ wastePoints = [], onSubmit, busy }) {
   const [photoPreview, setPhotoPreview] = useState('')
   const [wastePointId, setWastePointId] = useState('')
   const [locationNote, setLocationNote] = useState('')
+  const [locating, setLocating] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const autoDetected = useRef(false)
 
-  useEffect(() => {
-    if (!navigator.geolocation || wastePoints.length === 0) {
+  const detectLocation = useCallback(() => {
+    setLocationNote('')
+    if (!navigator.geolocation) {
+      setLocationNote('Location detection not supported — pick a point below')
       return
     }
+    if (wastePoints.length === 0) {
+      setLocationNote('No collection points available to match your location')
+      return
+    }
+    setLocating(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const lat = pos.coords.latitude
-        const lng = pos.coords.longitude
+        setLocating(false)
         let nearest = null
         let best = Infinity
         for (const p of wastePoints) {
-          const d = Math.hypot(p.latitude - lat, p.longitude - lng)
+          const d = Math.hypot(p.latitude - pos.coords.latitude, p.longitude - pos.coords.longitude)
           if (d < best) {
             best = d
             nearest = p
@@ -39,18 +50,47 @@ export default function WasteReportForm({ wastePoints = [], onSubmit, busy }) {
         }
         if (nearest) {
           setWastePointId(nearest.id)
-          setLocationNote(`Detected location — nearest point: ${nearest.name}`)
+          setLocationNote(`Detected — nearest point: ${nearest.name}`)
+        } else {
+          setLocationNote('No collection point found near you — pick one below')
         }
       },
-      () => setLocationNote('Location unavailable — pick a point below'),
+      (err) => {
+        setLocating(false)
+        if (err.code === err.PERMISSION_DENIED) {
+          setLocationNote('Location permission denied — pick a point below')
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setLocationNote('Location unavailable — pick a point below')
+        } else {
+          setLocationNote('Could not detect location — pick a point below')
+        }
+      },
+      { timeout: 10000, maximumAge: 60000 },
     )
   }, [wastePoints])
+
+  useEffect(() => {
+    if (autoDetected.current || wastePoints.length === 0) {
+      return
+    }
+    autoDetected.current = true
+    detectLocation()
+  }, [wastePoints, detectLocation])
 
   function onPhoto(e) {
     const file = e.target.files?.[0]
     if (!file) {
       return
     }
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file')
+      return
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setError('Photo must be 10 MB or smaller')
+      return
+    }
+    setError('')
     setPhotoFile(file)
     setPhotoPreview(URL.createObjectURL(file))
   }
@@ -107,18 +147,39 @@ export default function WasteReportForm({ wastePoints = [], onSubmit, busy }) {
 
       <div className="field">
         <label>Location</label>
-        <select className="select" value={wastePointId} onChange={(e) => setWastePointId(e.target.value)}>
-          <option value="">No specific point</option>
-          {wastePoints.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        {locationNote && (
-          <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-            {locationNote}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+          <select
+            className="select"
+            value={wastePointId}
+            onChange={(e) => setWastePointId(e.target.value)}
+          >
+            <option value="">No specific point</option>
+            {wastePoints.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <button
+            className="btn btn-outline"
+            type="button"
+            onClick={detectLocation}
+            disabled={locating || busy || saving}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            {locating ? 'Detecting…' : 'Use my location'}
+          </button>
+        </div>
+        {locating ? (
+          <p className="muted" style={{ fontSize: 12 }}>
+            Detecting your location…
           </p>
+        ) : (
+          locationNote && (
+            <p className="muted" style={{ fontSize: 12 }}>
+              {locationNote}
+            </p>
+          )
         )}
       </div>
 
@@ -138,6 +199,11 @@ export default function WasteReportForm({ wastePoints = [], onSubmit, busy }) {
         <label>Photo</label>
         <input className="input" type="file" accept="image/*" onChange={onPhoto} />
         {photoPreview && <img src={photoPreview} alt="attachment preview" className="photo-preview" />}
+        {photoFile && (
+          <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+            {photoFile.name} · {formatNumber(photoFile.size / (1024 * 1024), 1)} MB
+          </p>
+        )}
       </div>
 
       {error && <p className="error">{error}</p>}

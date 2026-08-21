@@ -209,7 +209,8 @@ textarea:focus {
 
 .badge-ok,
 .badge-collected,
-.badge-resolved {
+.badge-resolved,
+.badge-completed {
   background: rgba(16, 185, 129, 0.12);
   color: #047857;
 }

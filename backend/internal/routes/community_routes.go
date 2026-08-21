@@ -15,4 +15,5 @@ func RegisterCommunity(r *Router) {
 
 	r.Handle("GET", "/community/summary", auth(h.Summary))
 	r.Handle("GET", "/community/activity", auth(h.Activity))
+	r.Handle("GET", "/community/collections", auth(h.Collections))
 }

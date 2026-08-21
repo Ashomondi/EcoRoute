@@ -42,3 +42,18 @@ func (h *CommunityHandler) Activity(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.RespondData(w, http.StatusOK, items)
 }
+
+func (h *CommunityHandler) Collections(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.ClaimsFrom(r)
+	if !ok {
+		utils.RespondError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	collections, err := h.svc.Collections(r.Context(), claims.UserID)
+	if err != nil {
+		utils.RespondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	utils.RespondData(w, http.StatusOK, collections)
+}

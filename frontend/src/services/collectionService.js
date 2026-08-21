@@ -10,6 +10,11 @@ export function getCommunityActivity(limit = 10) {
   return api.get(`/community/activity?limit=${limit}`)
 }
 
+/** @returns {Promise<import('../types/community').CommunityCollections>} */
+export function getCommunityCollections() {
+  return api.get('/community/collections')
+}
+
 /** @returns {Promise<import('../types/collection').CollectionRecord[]>} */
 export function listCollections() {
   return api.get('/collections')

@@ -16,6 +16,9 @@
  * @typedef {import('./report').ReportInput} ReportInput
  * @typedef {import('./community').CommunitySummary} CommunitySummary
  * @typedef {import('./community').ActivityItem} ActivityItem
+ * @typedef {import('./community').ScheduledCollection} ScheduledCollection
+ * @typedef {import('./community').PastCollection} PastCollection
+ * @typedef {import('./community').CommunityCollections} CommunityCollections
  * @typedef {import('./analytics').AnalyticsSummary} AnalyticsSummary
  * @typedef {import('./analytics').DailySummary} DailySummary
  */

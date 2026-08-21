@@ -1,57 +1,56 @@
 import { Link } from 'react-router-dom'
-import StatCard from '../../components/Dashboard/StatCard'
 import { useAuth } from '../../hooks/useAuth'
-import { useTrucks } from '../../hooks/useTrucks'
 import { useRoutes } from '../../hooks/useRoutes'
-import { formatNumber, titleCase } from '../../utils/format'
+import { useTrucks } from '../../hooks/useTrucks'
 
 export default function DriverDashboard() {
   const { user } = useAuth()
-  const { trucks } = useTrucks()
-  const { routes, loading } = useRoutes()
-
-  const myTruck = trucks.find((t) => t.driver_id === user?.id)
-  const latest = routes[0]
+  const { routes, loading: routesLoading } = useRoutes()
+  const { trucks, loading: trucksLoading } = useTrucks()
+  const myTruck = trucks.find((t) => t.driver_id === user.id)
+  const activeRoute = routes.find((r) => r.status === 'active')
+  const plannedRoute = routes.find((r) => r.status === 'planned')
 
   return (
     <div>
       <div className="page-header">
-        <h1>Driver Dashboard</h1>
-        <p className="muted">{user?.name || 'Driver'}</p>
+        <h1>Driver dashboard</h1>
       </div>
 
-      <div className="grid cols-3" style={{ marginBottom: 16 }}>
-        <StatCard
-          label="My truck"
-          value={myTruck?.registration_number || 'Unassigned'}
-          sub={myTruck ? titleCase(myTruck.status) : 'No truck assigned yet'}
-        />
-        <StatCard
-          label="Active route"
-          value={loading ? '…' : latest ? titleCase(latest.status) : 'None'}
-          sub={latest ? `${latest.ordered_point_ids.length} stops` : undefined}
-        />
-        <StatCard
-          label="Route distance"
-          value={latest ? formatNumber(latest.distance_km, 1) : '—'}
-          unit="km"
-        />
+      <div className="grid cols-3" style={{ marginBottom: 20 }}>
+        <div className="card stat-card">
+          <div className="stat-label muted">Assigned truck</div>
+          <div className="stat-value" style={{ fontSize: 24 }}>{trucksLoading ? '…' : myTruck?.registration_number || 'None'}</div>
+          <div className="stat-sub muted">Capacity {myTruck ? `${myTruck.capacity_kg} kg` : '—'}</div>
+        </div>
+        <div className="card stat-card">
+          <div className="stat-label muted">Active route</div>
+          <div className="stat-value" style={{ fontSize: 24 }}>{routesLoading ? '…' : activeRoute ? 'In progress' : 'None'}</div>
+          <div className="stat-sub muted">{activeRoute ? `${activeRoute.stops_remaining ?? ''}` : plannedRoute ? 'A route is planned' : 'No routes yet'}</div>
+        </div>
+        <div className="card stat-card">
+          <div className="stat-label muted">Truck status</div>
+          <div className="stat-value" style={{ fontSize: 24 }}>{trucksLoading ? '…' : myTruck?.status || '—'}</div>
+          <div className="stat-sub muted">
+            {myTruck ? `${myTruck.current_lat?.toFixed(4)}, ${myTruck.current_lng?.toFixed(4)}` : '—'}
+          </div>
+        </div>
       </div>
 
-      <div className="card">
-        <h3>Today&apos;s plan</h3>
-        <p className="muted" style={{ margin: '8px 0 14px' }}>
-          {loading
-            ? 'Loading your route…'
-            : latest
-              ? `You have ${latest.ordered_point_ids.length} stop(s) across ~${latest.estimated_minutes} minutes.`
-              : 'No route assigned yet — an admin needs to optimize a route for your truck.'}
-        </p>
-        {latest && (
-          <Link className="btn btn-primary" to="/driver/my-route">
-            Go to My Route
-          </Link>
-        )}
+      <div className="report-banner">
+        <div>
+          <h2>{activeRoute ? 'Your route is live' : plannedRoute ? 'A route is ready for you' : 'No route assigned'}</h2>
+          <p>
+            {activeRoute
+              ? 'Follow the stop order and mark each collection as you go.'
+              : plannedRoute
+                ? 'Start the planned route to begin collections.'
+                : 'The dispatch team has not assigned you a route yet.'}
+          </p>
+        </div>
+        <Link to="/driver/route" className="btn btn-outline">
+          {activeRoute ? 'Open route →' : plannedRoute ? 'Start route →' : 'View routes'}
+        </Link>
       </div>
     </div>
   )

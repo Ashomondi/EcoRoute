@@ -1,44 +1,33 @@
-import { useCallback, useEffect, useState } from 'react'
-import { listRoutes, optimizeRoute } from '../services/routeService'
+import { useCallback, useState } from 'react'
+import routeService from '../services/routeService'
+import { useLoad } from './useLoad'
 
-/**
- * @returns {{
- *   routes: import('../types/route').Route[],
- *   loading: boolean,
- *   error: string,
- *   refetch: (truckId?: string) => Promise<void>,
- *   optimize: (truckId: string) => Promise<import('../types/route').OptimizationResult>,
- * }}
- */
-export function useRoutes() {
-  const [routes, setRoutes] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+export function useRoutes(params = {}) {
+  const list = useCallback(() => routeService.listRoutes(params), [params.truck_id])
+  const state = useLoad(list, { initial: [], deps: [params.truck_id] })
+  const [optimizing, setOptimizing] = useState(false)
+  const [optimizeError, setOptimizeError] = useState(null)
 
-  const refetch = useCallback(async (truckId) => {
-    setLoading(true)
-    setError('')
+  const optimize = async (truckId) => {
+    setOptimizing(true)
+    setOptimizeError(null)
     try {
-      setRoutes(await listRoutes(truckId))
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    refetch()
-  }, [refetch])
-
-  const optimize = useCallback(
-    async (truckId) => {
-      const result = await optimizeRoute(truckId)
-      await refetch(truckId)
+      const result = await routeService.optimizeRoute(truckId)
+      await state.reload()
       return result
-    },
-    [refetch],
-  )
+    } catch (err) {
+      setOptimizeError(err.message || 'Optimization failed')
+      return null
+    } finally {
+      setOptimizing(false)
+    }
+  }
 
-  return { routes, loading, error, refetch, optimize }
+  const updateStatus = async (id, status) => {
+    const result = await routeService.updateRouteStatus(id, status)
+    await state.reload()
+    return result
+  }
+
+  return { ...state, routes: state.data, optimize, optimizing, optimizeError, updateStatus }
 }

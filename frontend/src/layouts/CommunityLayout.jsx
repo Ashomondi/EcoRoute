@@ -1,5 +1,6 @@
 import { Navigate, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import Logo from '../components/Logo'
 
 const NAV = [
   { to: '/community', label: 'Dashboard', end: true },
@@ -17,7 +18,7 @@ export default function CommunityLayout() {
     <div className="community-shell">
       <header className="community-header">
         <div className="community-brand">
-          <span className="logo-dot" />
+          <Logo size={26} />
           <strong>EcoRoute</strong>
           <span className="community-role-pill">Resident</span>
         </div>

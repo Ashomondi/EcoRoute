@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Logo from '../components/Logo'
 import { useAuth } from '../hooks/useAuth'
 import { validateSignup } from '../utils/validators'
 
@@ -37,7 +38,7 @@ export default function SignupPage() {
     <div className="auth-wrap">
       <div className="auth-card card">
         <div className="auth-brand">
-          <span className="logo-dot" />
+          <Logo size={30} />
           <h1>EcoRoute</h1>
         </div>
         <p className="auth-tagline">Join your city&apos;s clean-up</p>

@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import Logo from '../components/Logo'
 import hero from '../assets/hero.png'
 
 const NAV_LINKS = [
@@ -53,10 +55,10 @@ const STEPS = [
 ]
 
 const STATS = [
-  { value: '32%', label: 'Less distance driven' },
-  { value: '28%', label: 'Less fuel consumed' },
-  { value: '41%', label: 'Fewer overflows' },
-  { value: '24/7', label: 'Live city coverage' },
+  { value: 32, suffix: '%', label: 'Less distance driven' },
+  { value: 28, suffix: '%', label: 'Less fuel consumed' },
+  { value: 41, suffix: '%', label: 'Fewer overflows' },
+  { value: null, text: '24/7', label: 'Live city coverage' },
 ]
 
 const IMPACT_ROWS = [
@@ -71,7 +73,7 @@ export default function LandingPage() {
       <header className="landing-nav">
         <div className="container landing-nav-inner">
           <div className="community-brand">
-            <span className="logo-dot" />
+            <Logo size={28} />
             <strong>EcoRoute</strong>
           </div>
           <nav className="landing-nav-links">
@@ -98,7 +100,7 @@ export default function LandingPage() {
           <div className="landing-copy">
             <span className="landing-eyebrow">
               <span className="landing-eyebrow-dot" />
-              Built for city operations teams
+              The municipal waste operations platform
             </span>
             <h1>
               Waste collection that <span className="landing-accent">runs itself smarter</span>
@@ -179,7 +181,11 @@ export default function LandingPage() {
         <div className="container landing-stats-band">
           {STATS.map((s) => (
             <div key={s.label} className="landing-stat">
-              <strong>{s.value}</strong>
+              {s.text ? (
+                <StaticValue text={s.text} />
+              ) : (
+                <AnimatedNumber value={s.value} suffix={s.suffix} />
+              )}
               <span>{s.label}</span>
             </div>
           ))}
@@ -255,9 +261,7 @@ export default function LandingPage() {
               {IMPACT_ROWS.map((row) => (
                 <div key={row.label} className="compare-row">
                   <span className="row-label">{row.label}</span>
-                  <div className="compare-track">
-                    <div style={{ width: `${row.pct}%`, background: 'var(--gradient)' }} />
-                  </div>
+                  <ImpactBar pct={row.pct} />
                   <div className="landing-compare-vals">
                     <span className="landing-before">{row.before}</span>
                     <span className="landing-after">→ {row.after}</span>
@@ -297,7 +301,7 @@ export default function LandingPage() {
       <footer className="landing-footer">
         <div className="container landing-footer-inner">
           <div className="community-brand">
-            <span className="logo-dot" />
+            <Logo size={24} />
             <strong>EcoRoute</strong>
           </div>
           <p className="muted">Smart waste collection for cleaner cities.</p>
@@ -375,4 +379,77 @@ function FeatureIcon({ name }) {
     default:
       return null
   }
+}
+
+function useInView(threshold = 0.3) {
+  const ref = useRef(null)
+  const [inView, setInView] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) {
+      return
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true)
+          observer.disconnect()
+        }
+      },
+      { threshold },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [threshold])
+
+  return [ref, inView]
+}
+
+function AnimatedNumber({ value, suffix = '', duration = 1400 }) {
+  const [ref, inView] = useInView()
+  const [display, setDisplay] = useState(0)
+
+  useEffect(() => {
+    if (!inView) {
+      return
+    }
+    let raf
+    const start = performance.now()
+    const tick = (now) => {
+      const progress = Math.min((now - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setDisplay(Math.round(eased * value))
+      if (progress < 1) {
+        raf = requestAnimationFrame(tick)
+      }
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [inView, value, duration])
+
+  return (
+    <strong ref={ref}>
+      {display}
+      {suffix}
+    </strong>
+  )
+}
+
+function StaticValue({ text }) {
+  const [ref, inView] = useInView()
+  return (
+    <strong ref={ref} className={`landing-stat-static${inView ? ' is-in' : ''}`}>
+      {text}
+    </strong>
+  )
+}
+
+function ImpactBar({ pct }) {
+  const [ref, inView] = useInView(0.4)
+  return (
+    <div className="compare-track" ref={ref}>
+      <div className="impact-fill" style={{ width: inView ? `${pct}%` : '0%' }} />
+    </div>
+  )
 }

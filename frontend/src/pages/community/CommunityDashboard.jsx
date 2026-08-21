@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import WasteMap from '../../components/Map/WasteMap'
+import WasteReportForm from '../../components/Waste/WasteReportForm'
 import PerformanceCard from '../../components/Dashboard/PerformanceCard'
 import { useAuth } from '../../hooks/useAuth'
 import { useWastePoints } from '../../hooks/useWastePoints'
@@ -17,54 +19,100 @@ export default function CommunityDashboard() {
   const { user } = useAuth()
   const { points, loading: pointsLoading } = useWastePoints()
   const { summary, activity, loading: activityLoading } = useCollections()
-  const { reports, loading: reportsLoading } = useReports()
+  const { reports, loading: reportsLoading, submit } = useReports()
+
+  const [busy, setBusy] = useState(false)
+  const [formError, setFormError] = useState('')
+  const [formKey, setFormKey] = useState(0)
+  const [justSubmitted, setJustSubmitted] = useState(false)
 
   const firstName = user?.name ? user.name.split(' ')[0] : 'Resident'
   const criticalCount = pointsLoading ? '…' : points.filter((p) => p.status === 'critical').length
 
+  async function handleReportSubmit(input) {
+    setFormError('')
+    setBusy(true)
+    try {
+      await submit(input)
+      setJustSubmitted(true)
+      setFormKey((k) => k + 1)
+      setTimeout(() => setJustSubmitted(false), 5000)
+    } catch (err) {
+      setFormError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="community-dash">
-      <section className="community-greeting">
-        <div className="community-greeting-copy">
-          <span className="community-greeting-tag">Your neighborhood</span>
-          <h1>Welcome back, {firstName}</h1>
-          <p>Here&apos;s what&apos;s happening around you today.</p>
-        </div>
-        <Link className="btn btn-light community-greeting-cta" to="/community/report">
-          Report an issue
-        </Link>
-      </section>
+      <div className="community-dash-layout">
+        <aside className="community-dash-aside">
+          <section className="community-greeting">
+            <span className="community-greeting-tag">Your neighborhood</span>
+            <h1>Welcome back, {firstName}</h1>
+            <p>Here&apos;s what&apos;s happening around you today.</p>
+          </section>
 
-      <div className="grid cols-4 community-stat-grid">
-        <CommunityStat
-          icon="report"
-          tone="teal"
-          label="Reports made"
-          value={summary ? formatNumber(summary.reports_made) : '…'}
-          sub="submitted by you"
-        />
-        <CommunityStat
-          icon="leaf"
-          tone="green"
-          label="Waste diverted"
-          value={summary ? formatNumber(summary.waste_diverted_kg) : '…'}
-          unit="kg"
-          sub="kept out of landfill"
-        />
-        <CommunityStat
-          icon="trophy"
-          tone="amber"
-          label="Community rank"
-          value={summary ? `#${summary.rank}` : '…'}
-          sub="among your neighbors"
-        />
-        <CommunityStat
-          icon="alert"
-          tone="red"
-          label="Critical points"
-          value={criticalCount}
-          sub="need collection now"
-        />
+          <div className="community-side-stats">
+            <CommunityStat
+              icon="report"
+              tone="teal"
+              label="Reports made"
+              value={summary ? formatNumber(summary.reports_made) : '…'}
+              sub="submitted by you"
+            />
+            <CommunityStat
+              icon="leaf"
+              tone="green"
+              label="Waste diverted"
+              value={summary ? formatNumber(summary.waste_diverted_kg) : '…'}
+              unit="kg"
+              sub="kept out of landfill"
+            />
+            <CommunityStat
+              icon="trophy"
+              tone="amber"
+              label="Community rank"
+              value={summary ? `#${summary.rank}` : '…'}
+              sub="among your neighbors"
+            />
+            <CommunityStat
+              icon="alert"
+              tone="red"
+              label="Critical points"
+              value={criticalCount}
+              sub="need collection now"
+            />
+          </div>
+        </aside>
+
+        <section className="community-report-panel">
+          <div className="community-report-head">
+            <h2>Report Waste</h2>
+            <p className="muted">Spot an issue in your neighborhood? Let us know in seconds.</p>
+          </div>
+
+          {justSubmitted && (
+            <div className="community-report-success">
+              Report submitted — thanks for looking out for your neighborhood!
+            </div>
+          )}
+          {formError && <p className="error">{formError}</p>}
+
+          <div className="card community-report-card">
+            {pointsLoading ? (
+              <div className="spinner" />
+            ) : (
+              <WasteReportForm
+                key={formKey}
+                wastePoints={points}
+                onSubmit={handleReportSubmit}
+                busy={busy}
+              />
+            )}
+          </div>
+        </section>
       </div>
 
       <div className="grid cols-2 community-dash-grid">

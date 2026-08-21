@@ -25,7 +25,7 @@ export default function CommunityDashboard() {
         <StatCard label="Reports made" value={summary ? summary.reports_made : '…'} />
         <StatCard
           label="Waste diverted"
-          value={summary ? summary.waste_diverted_kg.toFixed(0) : '…'}
+          value={summary ? (summary.waste_diverted_kg ?? 0).toFixed(0) : '…'}
           unit="kg"
         />
         <StatCard label="Community rank" value={summary ? `${summary.rank}` : '…'} sub="among your neighbors" />

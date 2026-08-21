@@ -674,9 +674,22 @@ textarea:focus {
   max-width: 480px;
 }
 
-.landing-copy .hero-img {
+.landing-hero .hero-img {
   flex: 1 1 380px;
   max-height: 380px;
+  width: auto;
+}
+
+.landing-eyebrow {
+  display: inline-block;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid rgba(15, 118, 110, 0.2);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
 }
 
 .landing-cta {

@@ -47,10 +47,14 @@ export default function LandingPage() {
 
       <section className="landing-hero">
         <div className="landing-copy">
-          <h1>Smart waste collection for cleaner cities</h1>
+          <span className="landing-eyebrow">Smart waste management & route optimization</span>
+          <h1>
+            Overflowing bins. Missed pickups. Trucks burning fuel on bad routes.
+          </h1>
           <p>
-            EcoRoute monitors collection points, optimizes truck routes, and lets residents report
-            issues — cutting distance, fuel and emissions across your city.
+            EcoRoute puts your city&apos;s waste on one live map — fill levels are monitored before
+            points overflow, truck routes optimize themselves in a click, and residents can report
+            issues in seconds.
           </p>
           <div className="landing-cta">
             <Link className="btn btn-primary" to="/signup">

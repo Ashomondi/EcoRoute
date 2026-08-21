@@ -20,6 +20,7 @@ export default function MyRoute() {
   const { routes, loading, refetch } = useRoutes()
   const [route, setRoute] = useState(null)
   const [stops, setStops] = useState([])
+  const [stopsLoading, setStopsLoading] = useState(false)
   const [collected, setCollected] = useState({})
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
@@ -36,6 +37,7 @@ export default function MyRoute() {
       return
     }
     let live = true
+    setStopsLoading(true)
     getRouteStops(route.id)
       .then((s) => {
         if (live) {
@@ -43,6 +45,11 @@ export default function MyRoute() {
         }
       })
       .catch(() => {})
+      .finally(() => {
+        if (live) {
+          setStopsLoading(false)
+        }
+      })
     return () => {
       live = false
     }
@@ -105,12 +112,15 @@ export default function MyRoute() {
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h3 style={{ marginBottom: 12 }}>
-          {stops.length} stops · {titleCase(route.status)}
+          {stopsLoading ? '…' : stops.length} stops · {titleCase(route.status)}
         </h3>
         <RouteSummary route={route} />
         <p className="muted" style={{ marginTop: 12 }}>
-          Progress: {done} of {stops.length} collected
-          {remainingKm > 0 ? ` · ~${remainingKm.toFixed(1)} km left` : ''}
+          {stopsLoading
+            ? 'Loading stops…'
+            : `Progress: ${done} of ${stops.length} collected${
+                remainingKm > 0 ? ` · ~${remainingKm.toFixed(1)} km left` : ''
+              }`}
         </p>
         {route.status === 'planned' && (
           <button className="btn btn-primary" type="button" style={{ marginTop: 12 }} disabled={busy} onClick={() => setStatus('active')}>
@@ -127,44 +137,46 @@ export default function MyRoute() {
       {msg && <p className="muted" style={{ marginBottom: 8 }}>{msg}</p>}
       {err && <p className="error" style={{ marginBottom: 8 }}>{err}</p>}
 
-      {stops.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <WasteMap points={stops.map((s) => s.waste_point)} route={stops.map((s) => s.waste_point)} height="300px" />
-        </div>
-      )}
-
-      {stops.length === 0 ? (
+      {stopsLoading ? (
+        <div className="spinner" />
+      ) : stops.length === 0 ? (
         <p className="empty">This route has no stops.</p>
       ) : (
-        <div className="grid cols-2">
-          {stops.map((s) => (
-            <div key={s.waste_point.id} className="card">
-              <div className="card-head">
-                <h3>
-                  {s.order}. {s.waste_point.name}
-                </h3>
-                <span className={`badge badge-${s.waste_point.status}`}>{titleCase(s.waste_point.status)}</span>
-              </div>
-              <p className="muted">Fill level: {s.waste_point.current_level_pct}%</p>
+        <>
+          <div style={{ marginBottom: 16 }}>
+            <WasteMap points={stops.map((s) => s.waste_point)} route={stops.map((s) => s.waste_point)} height="300px" />
+          </div>
 
-              {route.status === 'active' && !collected[s.waste_point.id] && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                  <button className="btn btn-primary" type="button" disabled={busy} onClick={() => mark(s.waste_point.id, 'collected')}>
-                    Mark Collected
-                  </button>
-                  <button className="btn btn-outline" type="button" disabled={busy} onClick={() => mark(s.waste_point.id, 'failed')}>
-                    Report Problem
-                  </button>
+          <div className="grid cols-2">
+            {stops.map((s) => (
+              <div key={s.waste_point.id} className="card">
+                <div className="card-head">
+                  <h3>
+                    {s.order}. {s.waste_point.name}
+                  </h3>
+                  <span className={`badge badge-${s.waste_point.status}`}>{titleCase(s.waste_point.status)}</span>
                 </div>
-              )}
-              {collected[s.waste_point.id] && (
-                <span className="badge badge-ok" style={{ marginTop: 12 }}>
-                  {collected[s.waste_point.id] === 'collected' ? 'Collected' : 'Problem reported'}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
+                <p className="muted">Fill level: {s.waste_point.current_level_pct}%</p>
+
+                {route.status === 'active' && !collected[s.waste_point.id] && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <button className="btn btn-primary" type="button" disabled={busy} onClick={() => mark(s.waste_point.id, 'collected')}>
+                      Mark Collected
+                    </button>
+                    <button className="btn btn-outline" type="button" disabled={busy} onClick={() => mark(s.waste_point.id, 'failed')}>
+                      Report Problem
+                    </button>
+                  </div>
+                )}
+                {collected[s.waste_point.id] && (
+                  <span className="badge badge-ok" style={{ marginTop: 12 }}>
+                    {collected[s.waste_point.id] === 'collected' ? 'Collected' : 'Problem reported'}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

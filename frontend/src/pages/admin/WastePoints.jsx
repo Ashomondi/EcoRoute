@@ -2,119 +2,121 @@ import { useState } from 'react'
 import WasteMap from '../../components/Map/WasteMap'
 import WastePointCard from '../../components/Waste/WastePointCard'
 import { useWastePoints } from '../../hooks/useWastePoints'
-import { createWastePoint } from '../../services/wasteService'
-import { validateWastePoint } from '../../utils/validators'
+import wasteService from '../../services/wasteService'
+import { validLatitude, validLongitude } from '../../utils/validators'
+import { KISUMU_CENTER } from '../../utils/constants'
+
+const emptyForm = { name: '', latitude: KISUMU_CENTER.lat, longitude: KISUMU_CENTER.lng, current_level_pct: 0 }
 
 export default function WastePoints() {
-  const { points, loading, error, refetch } = useWastePoints()
+  const { wastePoints, loading, error, reload } = useWastePoints()
   const [showForm, setShowForm] = useState(false)
-  const [name, setName] = useState('')
-  const [lat, setLat] = useState('-0.1')
-  const [lng, setLng] = useState('34.76')
-  const [level, setLevel] = useState('50')
-  const [msg, setMsg] = useState('')
+  const [form, setForm] = useState(emptyForm)
+  const [formError, setFormError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [actionError, setActionError] = useState('')
 
-  async function submit(e) {
+  const handleCreate = async (e) => {
     e.preventDefault()
-    setMsg('')
-    const err = validateWastePoint({ name, latitude: lat, longitude: lng, current_level_pct: level })
-    if (err) {
-      setMsg(err)
+    const latErr = validLatitude(form.latitude)
+    const lngErr = validLongitude(form.longitude)
+    if (!form.name || latErr || lngErr) {
+      setFormError(latErr || lngErr || 'Name is required')
       return
     }
+    setSaving(true)
+    setFormError('')
     try {
-      await createWastePoint({
-        name,
-        latitude: parseFloat(lat),
-        longitude: parseFloat(lng),
-        current_level_pct: parseInt(level, 10),
+      await wasteService.createWastePoint({
+        ...form,
+        latitude: Number(form.latitude),
+        longitude: Number(form.longitude),
+        current_level_pct: Number(form.current_level_pct),
       })
+      setForm(emptyForm)
       setShowForm(false)
-      setName('')
-      setLat('-0.1')
-      setLng('34.76')
-      setLevel('50')
-      await refetch()
+      await reload()
     } catch (err) {
-      setMsg(err.message)
+      setFormError(err.message)
+    } finally {
+      setSaving(false)
     }
   }
 
-  if (loading) {
-    return <div className="spinner" />
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this waste point?')) return
+    try {
+      await wasteService.deleteWastePoint(id)
+      await reload()
+    } catch (err) {
+      setActionError(err.message)
+    }
   }
 
   return (
     <div>
       <div className="page-header">
-        <h1>Waste Points</h1>
-        <button className="btn btn-primary" type="button" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? 'Cancel' : 'Add Point'}
+        <h1>Waste points</h1>
+        <button type="button" className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
+          {showForm ? 'Cancel' : '+ Add waste point'}
         </button>
       </div>
 
-      {error && <p className="error">{error}</p>}
-
-      <WasteMap points={points} />
+      {error && <div className="error" style={{ marginBottom: 12 }}>{error}</div>}
+      {actionError && <div className="error" style={{ marginBottom: 12 }}>{actionError}</div>}
 
       {showForm && (
-        <div className="card" style={{ marginBottom: 16 }}>
-          <h3>New waste point</h3>
-          <form onSubmit={submit}>
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h3>Add waste point</h3>
+          <form onSubmit={handleCreate} noValidate style={{ marginTop: 12 }}>
             <div className="grid cols-4">
               <div className="field">
                 <label>Name</label>
-                <input className="input" value={name} onChange={(e) => setName(e.target.value)} required />
+                <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Kondele" />
               </div>
               <div className="field">
                 <label>Latitude</label>
-                <input
-                  className="input"
-                  type="number"
-                  step="any"
-                  value={lat}
-                  onChange={(e) => setLat(e.target.value)}
-                  required
-                />
+                <input className="input" type="number" step="any" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} />
               </div>
               <div className="field">
                 <label>Longitude</label>
-                <input
-                  className="input"
-                  type="number"
-                  step="any"
-                  value={lng}
-                  onChange={(e) => setLng(e.target.value)}
-                  required
-                />
+                <input className="input" type="number" step="any" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} />
               </div>
               <div className="field">
-                <label>Level %</label>
-                <input
-                  className="input"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={level}
-                  onChange={(e) => setLevel(e.target.value)}
-                  required
-                />
+                <label>Fill level %</label>
+                <input className="input" type="number" min="0" max="100" value={form.current_level_pct} onChange={(e) => setForm({ ...form, current_level_pct: e.target.value })} />
               </div>
             </div>
-            <button className="btn btn-primary" type="submit">
-              Create
+            {formError && <div className="error">{formError}</div>}
+            <button className="btn btn-primary" type="submit" disabled={saving}>
+              {saving ? 'Saving…' : 'Create point'}
             </button>
           </form>
-          {msg && <p className="error">{msg}</p>}
         </div>
       )}
 
-      <div className="grid cols-3" style={{ marginTop: 16 }}>
-        {points.length === 0 && <p className="empty">No waste points yet.</p>}
-        {points.map((p) => (
-          <WastePointCard key={p.id} point={p} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="spinner" />
+      ) : (
+        <>
+          <WasteMap wastePoints={wastePoints} height={360} />
+          <div className="grid cols-3" style={{ marginTop: 20 }}>
+            {wastePoints.map((wp) => (
+              <WastePointCard
+                key={wp.id}
+                point={wp}
+                actions={
+                  <>
+                    <button type="button" className="btn btn-outline" onClick={() => handleDelete(wp.id)}>
+                      Delete
+                    </button>
+                  </>
+                }
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

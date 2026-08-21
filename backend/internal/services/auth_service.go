@@ -15,10 +15,12 @@ import (
 )
 
 var (
-	ErrEmailExists  = errors.New("email already registered")
-	ErrInvalidLogin = errors.New("invalid email or password")
-	ErrInvalidRole  = errors.New("invalid role")
-	ErrValidation   = errors.New("invalid input")
+	ErrEmailExists   = errors.New("email already registered")
+	ErrInvalidLogin  = errors.New("invalid email or password")
+	ErrInvalidRole   = errors.New("invalid role")
+	ErrInvalidInvite = errors.New("invalid or missing admin invite code")
+	ErrAdminOnly     = errors.New("only admin accounts may sign in here")
+	ErrValidation    = errors.New("invalid input")
 )
 
 type AuthService struct {
@@ -48,8 +50,11 @@ func (s *AuthService) Register(ctx context.Context, in models.RegisterInput) (*A
 	if role == "" {
 		role = models.RoleCommunity
 	}
-	if role != models.RoleCommunity && role != models.RoleDriver {
+	if role != models.RoleCommunity && role != models.RoleDriver && role != models.RoleAdmin {
 		return nil, ErrInvalidRole
+	}
+	if role == models.RoleAdmin && (s.cfg.AdminInvite == "" || in.InviteCode != s.cfg.AdminInvite) {
+		return nil, ErrInvalidInvite
 	}
 
 	existing, err := s.users.GetByEmail(ctx, email)
@@ -99,6 +104,17 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*AuthR
 		return nil, err
 	}
 	return &AuthResult{Token: token, User: u}, nil
+}
+
+func (s *AuthService) LoginAdmin(ctx context.Context, email, password string) (*AuthResult, error) {
+	result, err := s.Login(ctx, email, password)
+	if err != nil {
+		return nil, err
+	}
+	if result.User.Role != models.RoleAdmin {
+		return nil, ErrAdminOnly
+	}
+	return result, nil
 }
 
 func isUniqueViolation(err error) bool {

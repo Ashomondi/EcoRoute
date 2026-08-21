@@ -14,4 +14,5 @@ func RegisterAuth(r *Router) {
 
 	r.Handle("POST", "/auth/register", h.Register)
 	r.Handle("POST", "/auth/login", h.Login)
+	r.Handle("POST", "/auth/admin/login", h.LoginAdmin)
 }

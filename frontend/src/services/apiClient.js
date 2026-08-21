@@ -1,6 +1,8 @@
 import { TOKEN_KEY } from '../utils/constants'
 
-const BASE_URL = import.meta.env.VITE_API_BASE || '/api'
+// Render commonly supplies the backend URL as an environment variable. Strip
+// trailing slashes so endpoint paths remain valid for both absolute and proxy URLs.
+const BASE_URL = (import.meta.env.VITE_API_BASE || '/api').replace(/\/$/, '')
 
 export class ApiError extends Error {
   constructor(message, status) {

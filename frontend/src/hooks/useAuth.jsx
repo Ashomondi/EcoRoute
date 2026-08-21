@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import authService from '../services/authService'
-import { getStoredUser, setStoredUser, setToken } from '../services/apiClient'
+import { ApiError, getStoredUser, setStoredUser, setToken } from '../services/apiClient'
 import { ROLES } from '../utils/constants'
 
 const AuthContext = createContext(null)
@@ -16,6 +16,9 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     const result = await authService.login(credentials)
+    if (!result?.token || !result?.user) {
+      throw new ApiError('The server returned an invalid login response', 502)
+    }
     setToken(result.token)
     setStoredUser(result.user)
     setUser(result.user)
@@ -24,6 +27,9 @@ export function AuthProvider({ children }) {
 
   const register = async (data) => {
     const result = await authService.register(data)
+    if (!result?.token || !result?.user) {
+      throw new ApiError('The server returned an invalid registration response', 502)
+    }
     setToken(result.token)
     setStoredUser(result.user)
     setUser(result.user)

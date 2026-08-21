@@ -1,26 +1,28 @@
-import { api } from './apiClient'
+import api from './apiClient'
 
-/** @returns {Promise<import('../types/truck').Truck[]>} */
 export function listTrucks() {
   return api.get('/trucks')
 }
 
-/** @returns {Promise<import('../types/truck').Truck>} */
 export function getTruck(id) {
   return api.get(`/trucks/${id}`)
 }
 
-/** @param {import('../types/truck').TruckInput} input @returns {Promise<import('../types/truck').Truck>} */
-export function createTruck(input) {
-  return api.post('/trucks', input)
+export function createTruck(data) {
+  return api.post('/trucks', data)
 }
 
-/** @param {import('../types/truck').TruckInput} input @returns {Promise<import('../types/truck').Truck>} */
-export function updateTruck(id, input) {
-  return api.put(`/trucks/${id}`, input)
+export function updateTruck(id, data) {
+  return api.put(`/trucks/${id}`, data)
 }
 
-/** @returns {Promise<import('../types/truck').Truck>} */
-export function assignDriver(truckId, driverId) {
-  return api.put(`/trucks/${truckId}/driver`, { driver_id: driverId })
+export function assignDriver(id, driverId) {
+  return api.put(`/trucks/${id}/driver`, { driver_id: driverId })
 }
+
+export function deleteTruck(id) {
+  return api.delete(`/trucks/${id}`)
+}
+
+const truckService = { listTrucks, getTruck, createTruck, updateTruck, assignDriver, deleteTruck }
+export default truckService

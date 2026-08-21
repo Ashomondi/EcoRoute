@@ -1,26 +1,16 @@
-import { api, setToken } from './apiClient'
+import api from './apiClient'
 
-/** @returns {Promise<import('../types/user').User>} */
-export async function login(email, password) {
-  const data = await api.post('/auth/login', { email, password })
-  setToken(data.token)
-  return data.user
+export function login(credentials) {
+  return api.post('/auth/login', credentials)
 }
 
-/** @returns {Promise<import('../types/user').User>} */
-export async function adminLogin(email, password) {
-  const data = await api.post('/auth/admin/login', { email, password })
-  setToken(data.token)
-  return data.user
+export function register(data) {
+  return api.post('/auth/register', data)
 }
 
-/** @param {import('../types/user').RegisterInput} input @returns {Promise<import('../types/user').User>} */
-export async function register(input) {
-  const data = await api.post('/auth/register', input)
-  setToken(data.token)
-  return data.user
+export function loginAdmin(credentials) {
+  return api.post('/auth/admin/login', credentials)
 }
 
-export function logout() {
-  setToken(null)
-}
+const authService = { login, register, loginAdmin }
+export default authService

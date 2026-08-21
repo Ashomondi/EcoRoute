@@ -88,8 +88,12 @@ func (s *WasteService) Create(ctx context.Context, in models.WastePointInput) (*
 	if in.CurrentLevelPct != nil {
 		level = *in.CurrentLevelPct
 	}
-	if err := validateWastePointInput(in.Name, in.Latitude, in.Longitude, level); err != nil {
+	if err := validateWastePointInput(in.Name, in.Latitude, in.Longitude, level, in.Category, in.MaxCapacityKg); err != nil {
 		return nil, err
+	}
+	capacity := in.MaxCapacityKg
+	if capacity <= 0 {
+		capacity = 200
 	}
 
 	wp := &models.WastePoint{
@@ -98,6 +102,8 @@ func (s *WasteService) Create(ctx context.Context, in models.WastePointInput) (*
 		Longitude:       in.Longitude,
 		CurrentLevelPct: level,
 		Status:          StatusForLevel(level),
+		Category:        in.Category,
+		MaxCapacityKg:   capacity,
 	}
 	if err := s.repo.Create(ctx, wp); err != nil {
 		return nil, err
@@ -118,7 +124,15 @@ func (s *WasteService) Update(ctx context.Context, id string, in models.WastePoi
 	if in.CurrentLevelPct != nil {
 		level = *in.CurrentLevelPct
 	}
-	if err := validateWastePointInput(in.Name, in.Latitude, in.Longitude, level); err != nil {
+	category := existing.Category
+	if in.Category != "" {
+		category = in.Category
+	}
+	capacity := existing.MaxCapacityKg
+	if in.MaxCapacityKg > 0 {
+		capacity = in.MaxCapacityKg
+	}
+	if err := validateWastePointInput(in.Name, in.Latitude, in.Longitude, level, category, capacity); err != nil {
 		return nil, err
 	}
 
@@ -129,6 +143,8 @@ func (s *WasteService) Update(ctx context.Context, id string, in models.WastePoi
 		Longitude:       in.Longitude,
 		CurrentLevelPct: level,
 		Status:          StatusForLevel(level),
+		Category:        category,
+		MaxCapacityKg:   capacity,
 	})
 }
 
@@ -143,7 +159,7 @@ func (s *WasteService) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)
 }
 
-func validateWastePointInput(name string, lat, lng float64, level int) error {
+func validateWastePointInput(name string, lat, lng float64, level int, category string, capacityKg float64) error {
 	if name == "" {
 		return fmt.Errorf("%w: name is required", ErrValidation)
 	}
@@ -155,6 +171,12 @@ func validateWastePointInput(name string, lat, lng float64, level int) error {
 	}
 	if level < 0 || level > 100 {
 		return fmt.Errorf("%w: current_level_pct must be between 0 and 100", ErrValidation)
+	}
+	if capacityKg < 0 || capacityKg > 100000 {
+		return fmt.Errorf("%w: max_capacity_kg must be between 0 and 100000", ErrValidation)
+	}
+	if category != "" && category != "other" && !containsStr(commonCategories, category) {
+		return fmt.Errorf("%w: unknown bin category", ErrValidation)
 	}
 	return nil
 }

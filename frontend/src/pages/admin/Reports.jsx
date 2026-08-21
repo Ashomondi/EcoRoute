@@ -1,65 +1,100 @@
-import { useCallback, useEffect, useState } from 'react'
-import { api } from '../../services/apiClient'
-import { formatDateTime } from '../../utils/format'
-import { PRIORITY_LABELS, PROBLEM_TYPE_LABELS } from '../../utils/constants'
+import { useState } from 'react'
+import { useReports } from '../../hooks/useReports'
+import reportService from '../../services/reportService'
+import { PROBLEM_TYPE_LABELS, REPORT_PRIORITY_LABELS, REPORT_STATUS_LABELS } from '../../utils/constants'
+import { timeAgo } from '../../utils/format'
 
-function useOpenReports() {
-  const [reports, setReports] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-
-  const refetch = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      setReports(await api.get('/reports?status=open'))
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    refetch()
-  }, [refetch])
-
-  return { reports, loading, error, refetch }
-}
+const STATUS_FILTERS = ['', 'open', 'in_progress', 'resolved']
 
 export default function Reports() {
-  const { reports, loading, error } = useOpenReports()
+  const [status, setStatus] = useState('')
+  const { reports, loading, error, reload } = useReports({ status })
+  const [actionError, setActionError] = useState('')
+
+  const changeStatus = async (id, nextStatus) => {
+    try {
+      await reportService.updateReportStatus(id, nextStatus)
+      await reload()
+    } catch (err) {
+      setActionError(err.message)
+    }
+  }
+
+  const remove = async (id) => {
+    if (!window.confirm('Delete this report?')) return
+    try {
+      await reportService.deleteReport(id)
+      await reload()
+    } catch (err) {
+      setActionError(err.message)
+    }
+  }
 
   return (
     <div>
       <div className="page-header">
-        <h1>Community Reports</h1>
-      </div>
-
-      {error && <p className="error">{error}</p>}
-      {loading ? (
-        <div className="spinner" />
-      ) : reports.length === 0 ? (
-        <p className="empty">No open reports.</p>
-      ) : (
-        <div className="grid cols-2">
-          {reports.map((r) => (
-            <div key={r.id} className="card">
-              <div className="card-head">
-                <h3>{PROBLEM_TYPE_LABELS[r.problem_type] || r.problem_type}</h3>
-                <span className={`badge badge-${r.priority}`}>
-                  {PRIORITY_LABELS[r.priority] || r.priority}
-                </span>
-              </div>
-              {r.description && <p>{r.description}</p>}
-              <p className="muted" style={{ marginTop: 8 }}>
-                {r.waste_point_id ? 'Linked to a waste point' : 'No linked waste point'} ·{' '}
-                {formatDateTime(r.created_at)}
-              </p>
-            </div>
+        <h1>Reports</h1>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {STATUS_FILTERS.map((s) => (
+            <button key={s || 'all'} type="button" className={`btn ${status === s ? 'btn-primary' : 'btn-outline'}`} onClick={() => setStatus(s)}>
+              {s ? REPORT_STATUS_LABELS[s] : 'All'}
+            </button>
           ))}
         </div>
-      )}
+      </div>
+
+      {error && <div className="error" style={{ marginBottom: 12 }}>{error}</div>}
+      {actionError && <div className="error" style={{ marginBottom: 12 }}>{actionError}</div>}
+
+      <div className="card">
+        {loading ? (
+          <div className="spinner" />
+        ) : reports.length === 0 ? (
+          <div className="empty">No reports match this filter.</div>
+        ) : (
+          <div>
+            {reports.map((r) => (
+              <div className="report-item" key={r.id}>
+                <span className={`report-icon ${r.priority === 'high' ? 'report-icon-amber' : r.priority === 'medium' ? 'report-icon-blue' : 'report-icon-green'}`}>
+                  ⚑
+                </span>
+                <div className="report-item-body">
+                  <div className="report-item-title">
+                    <strong>{PROBLEM_TYPE_LABELS[r.problem_type] || r.problem_type}</strong>
+                    <span className={`badge badge-${r.priority === 'high' ? 'critical' : r.priority === 'medium' ? 'medium' : 'low'}`}>
+                      {REPORT_PRIORITY_LABELS[r.priority]}
+                    </span>
+                    <span className={`badge badge-${r.status === 'resolved' ? 'resolved' : r.status === 'in_progress' ? 'warning' : 'critical'}`}>
+                      {REPORT_STATUS_LABELS[r.status]}
+                    </span>
+                  </div>
+                  {r.description && <p className="muted" style={{ marginBottom: 4 }}>{r.description}</p>}
+                  <div className="report-item-meta muted">
+                    <span>{r.waste_point_name || 'Unknown point'}</span>
+                    <span>·</span>
+                    <span>{timeAgo(r.created_at)}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    {r.status !== 'in_progress' && (
+                      <button type="button" className="btn btn-outline" onClick={() => changeStatus(r.id, 'in_progress')}>
+                        In progress
+                      </button>
+                    )}
+                    {r.status !== 'resolved' && (
+                      <button type="button" className="btn btn-primary" onClick={() => changeStatus(r.id, 'resolved')}>
+                        Resolve
+                      </button>
+                    )}
+                    <button type="button" className="btn btn-outline" onClick={() => remove(r.id)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -10,7 +10,9 @@
  * @property {number} distance_saved_km
  * @property {number} fuel_saved_l
  * @property {number} co2_avoided_kg
- *
+ */
+
+/**
  * @typedef {Object} DailySummary
  * @property {string} day
  * @property {number} collected_count
@@ -18,4 +20,4 @@
  * @property {number} collected_kg
  */
 
-export {}
+export const _types = null

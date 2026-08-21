@@ -1,83 +1,110 @@
 import { useState } from 'react'
 import TruckCard from '../../components/Trucks/TruckCard'
 import { useTrucks } from '../../hooks/useTrucks'
-import { createTruck } from '../../services/truckService'
-import { validateTruck } from '../../utils/validators'
+import truckService from '../../services/truckService'
+
+const emptyForm = { registration_number: '', capacity_kg: 5000, current_lat: -0.1022, current_lng: 34.7617 }
 
 export default function Trucks() {
-  const { trucks, loading, error, refetch } = useTrucks()
+  const { trucks, loading, error, reload } = useTrucks()
   const [showForm, setShowForm] = useState(false)
-  const [reg, setReg] = useState('')
-  const [capacity, setCapacity] = useState('5000')
-  const [msg, setMsg] = useState('')
+  const [form, setForm] = useState(emptyForm)
+  const [formError, setFormError] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  async function submit(e) {
+  const handleCreate = async (e) => {
     e.preventDefault()
-    setMsg('')
-    const err = validateTruck({ registration_number: reg, capacity_kg: capacity })
-    if (err) {
-      setMsg(err)
+    if (!form.registration_number) {
+      setFormError('Registration number is required')
       return
     }
+    setSaving(true)
+    setFormError('')
     try {
-      await createTruck({ registration_number: reg, capacity_kg: parseFloat(capacity) })
+      await truckService.createTruck({
+        ...form,
+        capacity_kg: Number(form.capacity_kg),
+        current_lat: Number(form.current_lat),
+        current_lng: Number(form.current_lng),
+      })
+      setForm(emptyForm)
       setShowForm(false)
-      setReg('')
-      setCapacity('5000')
-      await refetch()
+      await reload()
     } catch (err) {
-      setMsg(err.message)
+      setFormError(err.message)
+    } finally {
+      setSaving(false)
     }
   }
 
-  if (loading) {
-    return <div className="spinner" />
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this truck?')) return
+    try {
+      await truckService.deleteTruck(id)
+      await reload()
+    } catch (err) {
+      setFormError(err.message)
+    }
   }
 
   return (
     <div>
       <div className="page-header">
         <h1>Trucks</h1>
-        <button className="btn btn-primary" type="button" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? 'Cancel' : 'Add Truck'}
+        <button type="button" className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
+          {showForm ? 'Cancel' : '+ Add truck'}
         </button>
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <div className="error" style={{ marginBottom: 12 }}>{error}</div>}
 
       {showForm && (
-        <div className="card" style={{ marginBottom: 16, maxWidth: 460 }}>
-          <h3>New truck</h3>
-          <form onSubmit={submit}>
-            <div className="field">
-              <label>Registration number</label>
-              <input className="input" value={reg} onChange={(e) => setReg(e.target.value)} required />
+        <div className="card" style={{ marginBottom: 20 }}>
+          <h3>Add truck</h3>
+          <form onSubmit={handleCreate} noValidate style={{ marginTop: 12 }}>
+            <div className="grid cols-4">
+              <div className="field">
+                <label>Registration number</label>
+                <input className="input" value={form.registration_number} onChange={(e) => setForm({ ...form, registration_number: e.target.value })} placeholder="KCA 456B" />
+              </div>
+              <div className="field">
+                <label>Capacity (kg)</label>
+                <input className="input" type="number" value={form.capacity_kg} onChange={(e) => setForm({ ...form, capacity_kg: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>Latitude</label>
+                <input className="input" type="number" step="any" value={form.current_lat} onChange={(e) => setForm({ ...form, current_lat: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>Longitude</label>
+                <input className="input" type="number" step="any" value={form.current_lng} onChange={(e) => setForm({ ...form, current_lng: e.target.value })} />
+              </div>
             </div>
-            <div className="field">
-              <label>Capacity (kg)</label>
-              <input
-                className="input"
-                type="number"
-                min="1"
-                value={capacity}
-                onChange={(e) => setCapacity(e.target.value)}
-                required
-              />
-            </div>
-            <button className="btn btn-primary" type="submit">
-              Create
+            {formError && <div className="error">{formError}</div>}
+            <button className="btn btn-primary" type="submit" disabled={saving}>
+              {saving ? 'Saving…' : 'Create truck'}
             </button>
           </form>
-          {msg && <p className="error">{msg}</p>}
         </div>
       )}
 
-      <div className="grid cols-3">
-        {trucks.length === 0 && <p className="empty">No trucks yet.</p>}
-        {trucks.map((t) => (
-          <TruckCard key={t.id} truck={t} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="spinner" />
+      ) : (
+        <div className="grid cols-3">
+          {trucks.map((truck) => (
+            <TruckCard
+              key={truck.id}
+              truck={truck}
+              actions={
+                <button type="button" className="btn btn-outline" onClick={() => handleDelete(truck.id)}>
+                  Delete
+                </button>
+              }
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,6 +1,4 @@
 /**
- * @typedef {'planned'|'active'|'completed'} RouteStatus
- *
  * @typedef {Object} Route
  * @property {string} id
  * @property {string} truck_id
@@ -9,13 +7,18 @@
  * @property {number} baseline_distance_km
  * @property {number} estimated_fuel_l
  * @property {number} estimated_minutes
- * @property {RouteStatus} status
+ * @property {'planned'|'active'|'completed'} status
  * @property {string} created_at
- *
+ * @property {string} [truck_registration]
+ */
+
+/**
  * @typedef {Object} RouteStop
  * @property {number} order
- * @property {import('./wastePoint').WastePoint} waste_point
- *
+ * @property {WastePoint} waste_point
+ */
+
+/**
  * @typedef {Object} OptimizationResult
  * @property {string} route_id
  * @property {string} truck_id
@@ -31,4 +34,4 @@
  * @property {number} time_saved_minutes
  */
 
-export {}
+export const _types = null

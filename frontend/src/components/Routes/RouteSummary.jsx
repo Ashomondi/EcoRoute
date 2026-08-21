@@ -1,38 +1,20 @@
-import { formatNumber } from '../../utils/format'
+import { formatKm } from '../../utils/format'
 
-/**
- * @param {{
- *   route: import('../../types/route').Route,
- * }} props
- */
-export default function RouteSummary({ route }) {
-  if (!route) {
-    return null
-  }
+export default function RouteSummary({ route, stops = [] }) {
+  const items = [
+    { label: 'Distance', value: formatKm(route.distance_km) },
+    { label: 'Est. time', value: `${route.estimated_minutes} min` },
+    { label: 'Est. fuel', value: `${route.estimated_fuel_l} L` },
+    { label: 'Stops', value: String(stops.length || route.ordered_point_ids?.length || 0) },
+  ]
   return (
-    <div className="grid cols-3">
-      <Mini label="Distance" value={formatNumber(route.distance_km, 1)} unit="km" />
-      <Mini label="Est. time" value={formatNumber(route.estimated_minutes)} unit="min" />
-      <Mini label="Est. fuel" value={formatNumber(route.estimated_fuel_l, 1)} unit="L" />
-    </div>
-  )
-}
-
-/**
- * @param {{
- *   label: string,
- *   value: string|number,
- *   unit?: string,
- * }} props
- */
-function Mini({ label, value, unit }) {
-  return (
-    <div className="card stat-card">
-      <p className="muted stat-label">{label}</p>
-      <p className="stat-value">
-        {value}
-        {unit && <span className="stat-unit">{unit}</span>}
-      </p>
+    <div className="grid cols-4">
+      {items.map((it) => (
+        <div className="card stat-card" key={it.label}>
+          <div className="stat-label muted">{it.label}</div>
+          <div className="stat-value" style={{ fontSize: 22 }}>{it.value}</div>
+        </div>
+      ))}
     </div>
   )
 }

@@ -1,95 +1,60 @@
 import StatCard from '../../components/Dashboard/StatCard'
-import PerformanceCard from '../../components/Dashboard/PerformanceCard'
 import { useAnalytics } from '../../hooks/useAnalytics'
-import { formatKm, formatNumber } from '../../utils/format'
-
-const TREES_PER_CO2_KG = 15 / 340
+import { formatKg, formatNumber, formatPercent } from '../../utils/format'
 
 export default function Analytics() {
-  const { summary, loading, error } = useAnalytics()
+  const { summary, trend, loading, reloadAll } = useAnalytics()
 
-  if (loading) {
-    return <div className="spinner" />
-  }
-  if (error) {
-    return <p className="error">{error}</p>
-  }
-  if (!summary) {
-    return <p className="empty">No analytics yet.</p>
-  }
-
-  const beforeKm = summary.total_distance_km + summary.distance_saved_km
-  const trees = Math.round(summary.co2_avoided_kg * TREES_PER_CO2_KG)
+  const maxCount = Math.max(...(trend?.map((d) => d.collected_count) || []), 1)
 
   return (
     <div>
       <div className="page-header">
-        <h1>Environmental Impact</h1>
+        <h1>Analytics & impact</h1>
+        <button type="button" className="btn btn-outline" onClick={reloadAll}>
+          Refresh
+        </button>
       </div>
 
-      <div className="grid cols-4">
-        <StatCard label="Distance saved" value={formatNumber(summary.distance_saved_km, 1)} unit="km" />
-        <StatCard label="Fuel saved" value={formatNumber(summary.fuel_saved_l, 1)} unit="L" />
-        <StatCard
-          label="Time saved"
-          value={formatNumber(summary.distance_saved_km > 0 ? summary.distance_saved_km / 25 : 0, 1)}
-          unit="hrs"
-        />
-        <StatCard
-          label="Waste collected today"
-          value={formatNumber(summary.collected_today_kg)}
-          unit="kg"
-        />
-        <StatCard label="CO2 reduced" value={formatNumber(summary.co2_avoided_kg)} unit="kg" />
-        <StatCard
-          label="Collection rate"
-          value={formatNumber(summary.collection_rate_pct)}
-          unit="%"
-        />
-        <StatCard label="Routes optimized" value={formatNumber(summary.total_routes)} />
-        <StatCard label="Trees equivalent" value={formatNumber(trees)} sub="this week" />
+      <div className="grid cols-4" style={{ marginBottom: 20 }}>
+        <StatCard label="Collected today" value={loading ? '…' : formatNumber(summary?.collected_today)} sub={`${formatKg(summary?.collected_today_kg)} collected`} />
+        <StatCard label="Recycled" value={loading ? '…' : formatKg(summary?.recycled_kg)} sub="total recycled" />
+        <StatCard label="Landfill diverted" value={loading ? '…' : formatKg(summary?.landfill_diverted_kg)} sub="kept out of landfill" />
+        <StatCard label="Collection rate" value={loading ? '…' : formatPercent(summary?.collection_rate_pct)} sub="successful vs attempted" />
       </div>
 
-      <div className="grid cols-2" style={{ marginTop: 16 }}>
-        <PerformanceCard title="Route efficiency">
-          <div className="compare-bar">
-            <div className="compare-row">
-              <span className="row-label">Before</span>
-              <div className="compare-track">
-                <div style={{ width: '100%', background: 'var(--danger)' }} />
+      <div className="grid cols-4" style={{ marginBottom: 20 }}>
+        <StatCard label="Distance saved" value={loading ? '…' : `${formatNumber(summary?.distance_saved_km, 1)} km`} sub={`${formatNumber(summary?.total_distance_km, 1)} km total`} />
+        <StatCard label="Fuel saved" value={loading ? '…' : `${formatNumber(summary?.fuel_saved_l, 1)} L`} sub="vs naive baseline" />
+        <StatCard label="CO₂ avoided" value={loading ? '…' : `${formatNumber(summary?.co2_avoided_kg, 1)} kg`} sub="fuel + recycling" />
+        <StatCard label="Routes" value={loading ? '…' : formatNumber(summary?.total_routes)} sub="all-time" />
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <h3>Collection trend</h3>
+        </div>
+        <p className="sub">Daily collected vs failed over the last 7 days.</p>
+        {loading ? (
+          <div className="spinner" />
+        ) : trend.length === 0 ? (
+          <div className="empty">No collection history yet.</div>
+        ) : (
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', height: 220, padding: '10px 0' }}>
+            {trend.map((d) => (
+              <div key={d.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
+                <div className="muted" style={{ fontSize: 12 }}>{d.collected_count}</div>
+                <div style={{ width: '100%', borderRadius: 8, background: 'var(--primary)', height: `${Math.max(4, (d.collected_count / maxCount) * 150)}px` }} title={`${d.collected_count} collected`} />
+                {d.failed_count > 0 && (
+                  <div style={{ width: '100%', borderRadius: 8, background: 'var(--danger)', height: `${Math.max(4, (d.failed_count / maxCount) * 150)}px` }} title={`${d.failed_count} failed`} />
+                )}
+                <span className="muted" style={{ fontSize: 11 }}>
+                  {new Date(d.day).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                </span>
               </div>
-              <span className="row-value">{formatKm(beforeKm)}</span>
-            </div>
-            <div className="compare-row">
-              <span className="row-label">After</span>
-              <div className="compare-track">
-                <div
-                  style={{
-                    width: `${summary.total_distance_km > 0 ? Math.min(100, (summary.total_distance_km / beforeKm) * 100) : 0}%`,
-                    background: 'var(--primary)',
-                  }}
-                />
-              </div>
-              <span className="row-value">{formatKm(summary.total_distance_km)}</span>
-            </div>
+            ))}
           </div>
-          <p className="muted" style={{ marginTop: 12 }}>
-            Optimized routes drove {formatKm(summary.distance_saved_km)} less than the naive
-            baseline.
-          </p>
-        </PerformanceCard>
-
-        <PerformanceCard title="Impact highlights">
-          <p className="muted" style={{ marginBottom: 8 }}>
-            Every optimized kilometre avoided an estimated {formatNumber(summary.fuel_saved_l, 1)} L of
-            fuel and {formatNumber(summary.co2_avoided_kg, 1)} kg of CO2.
-          </p>
-          <p className="muted">
-            {summary.collected_today} collections today diverted{' '}
-            {formatNumber(summary.collected_today_kg)} kg from landfill — equivalent to planting{' '}
-            {formatNumber(trees)} trees this week.
-          </p>
-        </PerformanceCard>
+        )}
       </div>
     </div>
   )

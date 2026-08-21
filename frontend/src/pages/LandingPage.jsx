@@ -47,7 +47,6 @@ export default function LandingPage() {
 
       <section className="landing-hero">
         <div className="landing-copy">
-          <span className="landing-eyebrow">Smart waste management & route optimization</span>
           <h1>
             Overflowing bins. Missed pickups. Trucks burning fuel on bad routes.
           </h1>
@@ -79,7 +78,7 @@ export default function LandingPage() {
 
       <footer style={{ padding: '20px 0 8px', borderTop: '1px solid var(--border)' }}>
         <p className="muted" style={{ fontSize: 13 }}>
-          EcoRoute · Smart waste management & route optimization
+          EcoRoute
         </p>
       </footer>
     </div>

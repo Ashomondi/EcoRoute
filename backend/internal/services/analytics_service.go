@@ -80,7 +80,7 @@ func (s *AnalyticsService) Trend(ctx context.Context, days int) ([]models.DailyS
 	rows, err := s.pool.Query(ctx,
 		`SELECT day, collected_count, failed_count, collected_kg
 		 FROM daily_collection_summary
-		 WHERE day >= current_date - ($1 || ' days')::interval
+		 WHERE day >= current_date - make_interval(days => $1)
 		 ORDER BY day`, days)
 	if err != nil {
 		return nil, err

@@ -1,7 +1,5 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import WasteMap from '../../components/Map/WasteMap'
-import WasteReportForm from '../../components/Waste/WasteReportForm'
 import PerformanceCard from '../../components/Dashboard/PerformanceCard'
 import { useAuth } from '../../hooks/useAuth'
 import { useWastePoints } from '../../hooks/useWastePoints'
@@ -19,30 +17,10 @@ export default function CommunityDashboard() {
   const { user } = useAuth()
   const { points, loading: pointsLoading } = useWastePoints()
   const { summary, activity, loading: activityLoading } = useCollections()
-  const { reports, loading: reportsLoading, submit } = useReports()
-
-  const [busy, setBusy] = useState(false)
-  const [formError, setFormError] = useState('')
-  const [formKey, setFormKey] = useState(0)
-  const [justSubmitted, setJustSubmitted] = useState(false)
+  const { reports, loading: reportsLoading } = useReports()
 
   const firstName = user?.name ? user.name.split(' ')[0] : 'Resident'
   const criticalCount = pointsLoading ? '…' : points.filter((p) => p.status === 'critical').length
-
-  async function handleReportSubmit(input) {
-    setFormError('')
-    setBusy(true)
-    try {
-      await submit(input)
-      setJustSubmitted(true)
-      setFormKey((k) => k + 1)
-      setTimeout(() => setJustSubmitted(false), 5000)
-    } catch (err) {
-      setFormError(err.message)
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <div className="community-dash">
@@ -87,115 +65,88 @@ export default function CommunityDashboard() {
           </div>
         </aside>
 
-        <section className="community-report-panel">
-          <div className="community-report-head">
-            <h2>Report Waste</h2>
-            <p className="muted">Spot an issue in your neighborhood? Let us know in seconds.</p>
-          </div>
-
-          {justSubmitted && (
-            <div className="community-report-success">
-              Report submitted — thanks for looking out for your neighborhood!
-            </div>
-          )}
-          {formError && <p className="error">{formError}</p>}
-
-          <div className="card community-report-card">
+        <div className="community-dash-main">
+          <PerformanceCard title="Waste points near you" className="community-dash-block">
+            <p className="card-sub">Live map of collection points in your area</p>
             {pointsLoading ? (
               <div className="spinner" />
             ) : (
-              <WasteReportForm
-                key={formKey}
-                wastePoints={points}
-                onSubmit={handleReportSubmit}
-                busy={busy}
-              />
+              <WasteMap points={points} height="320px" />
             )}
-          </div>
-        </section>
-      </div>
+          </PerformanceCard>
 
-      <div className="grid cols-2 community-dash-grid">
-        <PerformanceCard title="Waste points near you">
-          <p className="card-sub">Live map of collection points in your area</p>
-          {pointsLoading ? (
-            <div className="spinner" />
-          ) : (
-            <WasteMap points={points} height="320px" />
-          )}
-        </PerformanceCard>
+          <PerformanceCard title="Local activity" className="community-dash-block">
+            <p className="card-sub">Latest collections and reports near you</p>
+            {activityLoading ? (
+              <div className="spinner" />
+            ) : activity.length === 0 ? (
+              <p className="empty">No recent activity yet.</p>
+            ) : (
+              <div className="activity-list">
+                {activity.map((item, i) => (
+                  <div key={i} className="activity-item">
+                    <span
+                      className={`activity-icon ${
+                        item.type === 'collection' ? 'activity-icon-green' : 'activity-icon-amber'
+                      }`}
+                    >
+                      <ActivityIcon type={item.type} />
+                    </span>
+                    <span style={{ flex: 1 }}>{titleCase(item.message)}</span>
+                    <span className="muted activity-time">{timeAgo(item.time)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </PerformanceCard>
 
-        <PerformanceCard title="Local activity">
-          <p className="card-sub">Latest collections and reports near you</p>
-          {activityLoading ? (
-            <div className="spinner" />
-          ) : activity.length === 0 ? (
-            <p className="empty">No recent activity yet.</p>
-          ) : (
-            <div className="activity-list">
-              {activity.map((item, i) => (
-                <div key={i} className="activity-item">
-                  <span
-                    className={`activity-icon ${
-                      item.type === 'collection' ? 'activity-icon-green' : 'activity-icon-amber'
-                    }`}
-                  >
-                    <ActivityIcon type={item.type} />
-                  </span>
-                  <span style={{ flex: 1 }}>{titleCase(item.message)}</span>
-                  <span className="muted activity-time">{timeAgo(item.time)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </PerformanceCard>
-      </div>
-
-      <div className="community-reports">
-        <PerformanceCard title="Your reports">
-          <p className="card-sub">Track every issue you&apos;ve raised</p>
-          {reportsLoading ? (
-            <div className="spinner" />
-          ) : reports.length === 0 ? (
-            <p className="empty">
-              You haven&apos;t made any reports yet.{' '}
-              <Link to="/community/report">Report your first issue</Link>.
-            </p>
-          ) : (
-            <div className="activity-list">
-              {reports.map((r) => (
-                <div key={r.id} className="report-item">
-                  <span
-                    className={`report-icon ${
-                      r.status === 'resolved'
-                        ? 'report-icon-green'
-                        : r.status === 'in_progress'
-                          ? 'report-icon-blue'
-                          : 'report-icon-amber'
-                    }`}
-                  >
-                    <ReportIcon status={r.status} />
-                  </span>
-                  <div className="report-item-body">
-                    <div className="report-item-title">
-                      <strong>{PROBLEM_TYPE_LABELS[r.problem_type] || r.problem_type}</strong>
-                      {r.photo_url && <span className="badge badge-low">Photo</span>}
-                    </div>
-                    <div className="report-item-meta">
-                      <span className={`badge ${REPORT_STATUS_BADGES[r.status] || 'badge-warning'}`}>
-                        {REPORT_STATUS_LABELS[r.status] || r.status}
-                      </span>
-                      <span className={`badge badge-${r.priority}`}>
-                        {PRIORITY_LABELS[r.priority] || r.priority} priority
-                      </span>
-                      <span className="muted activity-time">{timeAgo(r.created_at)}</span>
+          <PerformanceCard title="Your reports" className="community-dash-block">
+            <p className="card-sub">Track every issue you&apos;ve raised</p>
+            {reportsLoading ? (
+              <div className="spinner" />
+            ) : reports.length === 0 ? (
+              <p className="empty">
+                You haven&apos;t made any reports yet.{' '}
+                <Link to="/community/report">Report your first issue</Link>.
+              </p>
+            ) : (
+              <div className="activity-list">
+                {reports.map((r) => (
+                  <div key={r.id} className="report-item">
+                    <span
+                      className={`report-icon ${
+                        r.status === 'resolved'
+                          ? 'report-icon-green'
+                          : r.status === 'in_progress'
+                            ? 'report-icon-blue'
+                            : 'report-icon-amber'
+                      }`}
+                    >
+                      <ReportIcon status={r.status} />
+                    </span>
+                    <div className="report-item-body">
+                      <div className="report-item-title">
+                        <strong>{PROBLEM_TYPE_LABELS[r.problem_type] || r.problem_type}</strong>
+                        {r.photo_url && <span className="badge badge-low">Photo</span>}
+                      </div>
+                      <div className="report-item-meta">
+                        <span
+                          className={`badge ${REPORT_STATUS_BADGES[r.status] || 'badge-warning'}`}
+                        >
+                          {REPORT_STATUS_LABELS[r.status] || r.status}
+                        </span>
+                        <span className={`badge badge-${r.priority}`}>
+                          {PRIORITY_LABELS[r.priority] || r.priority} priority
+                        </span>
+                        <span className="muted activity-time">{timeAgo(r.created_at)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </PerformanceCard>
+                ))}
+              </div>
+            )}
+          </PerformanceCard>
+        </div>
       </div>
     </div>
   )

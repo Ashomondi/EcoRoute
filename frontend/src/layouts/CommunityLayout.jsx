@@ -16,11 +16,13 @@ export default function CommunityLayout() {
 
   return (
     <div className="community-shell">
-      <header className="community-header">
+      <aside className="community-sidebar">
         <div className="community-brand">
-          <Logo size={26} />
-          <strong>EcoRoute</strong>
-          <span className="community-role-pill">Resident</span>
+          <Logo size={28} />
+          <div className="community-brand-title">
+            <strong>EcoRoute</strong>
+            <span className="community-role-pill">Resident</span>
+          </div>
         </div>
         <nav className="community-nav">
           {NAV.map((item) => (
@@ -34,10 +36,13 @@ export default function CommunityLayout() {
             </NavLink>
           ))}
         </nav>
-        <button className="btn btn-outline" type="button" onClick={logout}>
-          Log out
-        </button>
-      </header>
+        <div className="community-sidebar-footer">
+          <p className="community-sidebar-user">{user.name}</p>
+          <button className="btn btn-outline" type="button" onClick={logout}>
+            Log out
+          </button>
+        </div>
+      </aside>
       <main className="main">
         <Outlet />
       </main>

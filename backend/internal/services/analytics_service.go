@@ -6,16 +6,18 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"ecoroute/backend/internal/models"
+	"ecoroute/backend/internal/repositories"
 )
 
 const co2KgPerLitreFuel = 2.68
 
 type AnalyticsService struct {
-	pool *pgxpool.Pool
+	pool      *pgxpool.Pool
+	recycling *repositories.RecyclingRepository
 }
 
 func NewAnalyticsService(pool *pgxpool.Pool) *AnalyticsService {
-	return &AnalyticsService{pool: pool}
+	return &AnalyticsService{pool: pool, recycling: repositories.NewRecyclingRepository(pool)}
 }
 
 func (s *AnalyticsService) Summary(ctx context.Context) (*models.AnalyticsSummary, error) {
@@ -47,10 +49,15 @@ func (s *AnalyticsService) Summary(ctx context.Context) (*models.AnalyticsSummar
 		return nil, err
 	}
 
-	summary.RecycledKg = summary.CollectedTodayKg
-	summary.LandfillDivertedKg = summary.CollectedTodayKg
+	recycledKg, recyclingCO2, err := s.recycling.RecyclingTotals(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	summary.RecycledKg = recycledKg
+	summary.LandfillDivertedKg = recycledKg
 	summary.FuelSavedL = summary.DistanceSavedKm * fuelLPerKm
-	summary.CO2AvoidedKg = summary.FuelSavedL * co2KgPerLitreFuel
+	summary.CO2AvoidedKg = summary.FuelSavedL*co2KgPerLitreFuel + recyclingCO2
 
 	return summary, nil
 }

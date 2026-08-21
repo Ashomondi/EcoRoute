@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -29,25 +30,32 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 	log.Println("seed: users ok")
 
 	points := []struct {
-		name  string
-		lat   float64
-		lng   float64
-		level int
+		name     string
+		lat      float64
+		lng      float64
+		level    int
+		category string
+		capacity float64
 	}{
-		{"Kondele", -0.0900, 34.8000, 92},
-		{"Market A", -0.0950, 34.7300, 76},
-		{"Manyatta", -0.0950, 34.7900, 43},
-		{"Nyalenda", -0.1100, 34.7200, 88},
+		{"Kondele", -0.0900, 34.8000, 92, "organic", 200},
+		{"Market A", -0.0950, 34.7300, 76, "paper", 250},
+		{"Manyatta", -0.0950, 34.7900, 43, "glass", 180},
+		{"Nyalenda", -0.1100, 34.7200, 88, "plastic", 220},
 	}
 	pointIDs := map[string]string{}
 	for _, p := range points {
-		id, err := seedWastePoint(ctx, pool, p.name, p.lat, p.lng, p.level)
+		id, err := seedWastePoint(ctx, pool, p.name, p.lat, p.lng, p.level, p.category, p.capacity)
 		if err != nil {
 			return err
 		}
 		pointIDs[p.name] = id
 	}
 	log.Println("seed: waste points ok")
+
+	if err := seedSmartBinReadings(ctx, pool, pointIDs); err != nil {
+		return err
+	}
+	log.Println("seed: smart bin readings ok")
 
 	driverID, err := userIDByEmail(ctx, pool, "driver@ecoroute.dev")
 	if err != nil {
@@ -121,7 +129,59 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 	}
 	log.Println("seed: recycling ok")
 
+	if err := seedCollectionRequests(ctx, pool, communityID); err != nil {
+		return err
+	}
+	log.Println("seed: collection requests ok")
+
+	var collectionID, dropoffID string
+	if err := pool.QueryRow(ctx,
+		`SELECT id FROM collection_records WHERE outcome = 'collected' ORDER BY collected_at DESC LIMIT 1`).Scan(&collectionID); err != nil {
+		return err
+	}
+	if err := pool.QueryRow(ctx,
+		`SELECT id FROM recycling_records ORDER BY created_at DESC LIMIT 1`).Scan(&dropoffID); err != nil {
+		return err
+	}
+	if err := seedMaterialProcessing(ctx, pool, collectionID, dropoffID); err != nil {
+		return err
+	}
+	log.Println("seed: recycling centre ok")
+
+	if err := seedMarketplace(ctx, pool, communityID); err != nil {
+		return err
+	}
+	log.Println("seed: marketplace ok")
+
 	return nil
+}
+
+func seedSmartBinReadings(ctx context.Context, pool *pgxpool.Pool, pointIDs map[string]string) error {
+	fullBinID := pointIDs["Nyalenda"]
+	composition := map[string]float64{"plastic": 18.2, "organic": 3.4, "paper": 2.1}
+	totalKg := 23.7
+
+	var exists bool
+	if err := pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM smart_bin_readings WHERE waste_point_id = $1)`, fullBinID).Scan(&exists); err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	compJSON, err := json.Marshal(composition)
+	if err != nil {
+		return err
+	}
+	if _, err := pool.Exec(ctx,
+		`UPDATE waste_points SET current_estimated_kg = $2 WHERE id = $1`, fullBinID, totalKg); err != nil {
+		return err
+	}
+	_, err = pool.Exec(ctx,
+		`INSERT INTO smart_bin_readings (waste_point_id, total_kg, composition, primary_category, confidence, trigger_type, status)
+		 VALUES ($1, $2, $3, 'plastic', 0.93, 'full', 'pending')`,
+		fullBinID, totalKg, compJSON)
+	return err
 }
 
 func seedUser(ctx context.Context, pool *pgxpool.Pool, email, password string, role models.Role, name string) error {
@@ -144,20 +204,24 @@ func seedUser(ctx context.Context, pool *pgxpool.Pool, email, password string, r
 	return err
 }
 
-func seedWastePoint(ctx context.Context, pool *pgxpool.Pool, name string, lat, lng float64, level int) (string, error) {
+func seedWastePoint(ctx context.Context, pool *pgxpool.Pool, name string, lat, lng float64, level int, category string, capacity float64) (string, error) {
 	var id string
 	err := pool.QueryRow(ctx, `SELECT id FROM waste_points WHERE name = $1`, name).Scan(&id)
 	if err == nil {
-		return id, nil
+		_, err := pool.Exec(ctx,
+			`UPDATE waste_points SET latitude = $2, longitude = $3, current_level_pct = $4, status = $5,
+			        category = $6, max_capacity_kg = $7 WHERE id = $1`,
+			id, lat, lng, level, services.StatusForLevel(level), category, capacity)
+		return id, err
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
 		return "", err
 	}
 
 	err = pool.QueryRow(ctx,
-		`INSERT INTO waste_points (name, latitude, longitude, current_level_pct, status)
-		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-		name, lat, lng, level, services.StatusForLevel(level)).Scan(&id)
+		`INSERT INTO waste_points (name, latitude, longitude, current_level_pct, status, category, max_capacity_kg)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+		name, lat, lng, level, services.StatusForLevel(level), category, capacity).Scan(&id)
 	return id, err
 }
 
@@ -284,6 +348,84 @@ func seedRecyclingRecord(ctx context.Context, pool *pgxpool.Pool, userID, wasteT
 	return err
 }
 
+func seedCollectionRequests(ctx context.Context, pool *pgxpool.Pool, communityID string) error {
+	requests := []struct {
+		typ   string
+		waste string
+		kg    float64
+		lat   float64
+		lng   float64
+		addr  string
+		notes string
+	}{
+		{models.RequestTypeHousehold, "plastic", 8, -0.0980, 34.7750, "Kondele Phase 2", "Mixed bottles and containers"},
+		{models.RequestTypeBusiness, "paper", 35, -0.1030, 34.7600, "Oginga Odinga St", "Office paper waste from a small shop"},
+		{models.RequestTypeHousehold, "e_waste", 4, -0.1110, 34.7500, "Nyalenda", "Old phones and a laptop"},
+	}
+	for _, req := range requests {
+		var exists bool
+		if err := pool.QueryRow(ctx,
+			`SELECT EXISTS (SELECT 1 FROM collection_requests WHERE requester_id = $1 AND waste_type = $2 AND estimated_kg = $3)`,
+			communityID, req.waste, req.kg).Scan(&exists); err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+		notes := req.notes
+		if _, err := pool.Exec(ctx,
+			`INSERT INTO collection_requests
+			   (requester_id, requester_type, waste_type, estimated_kg, latitude, longitude, address, notes, status)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')`,
+			communityID, req.typ, req.waste, req.kg, req.lat, req.lng, req.addr, notes); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func seedMaterialProcessing(ctx context.Context, pool *pgxpool.Pool, collectionID, dropoffID string) error {
+	batches := []struct {
+		sourceType string
+		sourceID   string
+		material   string
+		kg         float64
+		status     string
+	}{
+		{models.MaterialSourceCollection, collectionID, "plastic", 6, models.MaterialStatusRecycled},
+		{models.MaterialSourceCollection, collectionID, "metal", 4, models.MaterialStatusSorted},
+		{models.MaterialSourceDropoff, dropoffID, "paper", 3, models.MaterialStatusSold},
+		{models.MaterialSourceDropoff, dropoffID, "organic", 10, models.MaterialStatusRecycled},
+	}
+	for _, b := range batches {
+		var exists bool
+		if err := pool.QueryRow(ctx,
+			`SELECT EXISTS (SELECT 1 FROM material_processing WHERE source_type = $1 AND source_id = $2 AND material = $3)`,
+			b.sourceType, b.sourceID, b.material).Scan(&exists); err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+		sortedKg := 0.0
+		recycledKg := 0.0
+		switch b.status {
+		case models.MaterialStatusSorted:
+			sortedKg = b.kg
+		case models.MaterialStatusRecycled, models.MaterialStatusSold:
+			sortedKg = b.kg
+			recycledKg = b.kg
+		}
+		if _, err := pool.Exec(ctx,
+			`INSERT INTO material_processing (source_type, source_id, material, received_kg, sorted_kg, recycled_kg, status)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+			b.sourceType, b.sourceID, b.material, b.kg, sortedKg, recycledKg, b.status); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func userIDByEmail(ctx context.Context, pool *pgxpool.Pool, email string) (string, error) {
 	var id string
 	err := pool.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&id)
@@ -349,4 +491,247 @@ func seedCollection(ctx context.Context, pool *pgxpool.Pool, routeID, truckID, p
 		 VALUES ($1, $2, $3, $4, $5, $6)`,
 		routeID, pointID, truckID, outcome, kg, collectedAt)
 	return err
+}
+
+func seedMarketplace(ctx context.Context, pool *pgxpool.Pool, communityID string) error {
+	if err := seedUser(ctx, pool, "seller@ecoroute.dev", "seller123", models.RoleCommunity, "GreenHome Kenya"); err != nil {
+		return err
+	}
+	sellerUserID, err := userIDByEmail(ctx, pool, "seller@ecoroute.dev")
+	if err != nil {
+		return err
+	}
+
+	sellerID, err := seedSellerProfile(ctx, pool, sellerUserID)
+	if err != nil {
+		return err
+	}
+
+	plasticBatchID, err := materialBatchID(ctx, pool, "collection", "plastic")
+	if err != nil {
+		return err
+	}
+	paperBatchID, err := materialBatchID(ctx, pool, "dropoff", "paper")
+	if err != nil {
+		return err
+	}
+	organicBatchID, err := materialBatchID(ctx, pool, "dropoff", "organic")
+	if err != nil {
+		return err
+	}
+
+	products := []struct {
+		name             string
+		category         string
+		price            float64
+		stock            int
+		batchID          string
+		recycledPercent  int
+		wasteRecoveredKg float64
+	}{
+		{"EcoChair — Recycled Plastic", "plastic", 3500, 24, plasticBatchID, 85, 8.2},
+		{"EcoGrip Storage Crate", "plastic", 1200, 40, plasticBatchID, 90, 3.4},
+		{"Recycled Paper Notebook", "paper", 450, 60, paperBatchID, 100, 0.5},
+		{"EcoRoute Organic Compost 10kg", "organic", 500, 35, organicBatchID, 100, 10},
+	}
+	productIDs := map[string]string{}
+	for _, p := range products {
+		id, err := seedProduct(ctx, pool, sellerID, p.name, p.category, p.price, p.stock, p.batchID, p.recycledPercent, p.wasteRecoveredKg)
+		if err != nil {
+			return err
+		}
+		productIDs[p.name] = id
+	}
+
+	reviews := []struct {
+		productID string
+		rating    int
+		comment   string
+	}{
+		{productIDs["EcoChair — Recycled Plastic"], 5, "Solid chair, great to know it came from collected bottles."},
+		{productIDs["Recycled Paper Notebook"], 4, "Nice notebooks and clearly recycled paper."},
+		{productIDs["EcoRoute Organic Compost 10kg"], 5, "My garden loves this compost."},
+	}
+	for _, rv := range reviews {
+		if err := seedReview(ctx, pool, rv.productID, communityID, rv.rating, rv.comment); err != nil {
+			return err
+		}
+	}
+
+	orders := []struct {
+		orderNumber string
+		status      string
+		items       []struct {
+			productID string
+			qty       int
+		}
+		deliveryAddress string
+		daysAgo         int
+	}{
+		{
+			orderNumber:     "ECO-SEED-0001",
+			status:          models.OrderStatusDelivered,
+			deliveryAddress: "Kondele Phase 2, Kisumu",
+			daysAgo:         3,
+			items: []struct {
+				productID string
+				qty       int
+			}{
+				{productIDs["EcoChair — Recycled Plastic"], 1},
+				{productIDs["Recycled Paper Notebook"], 2},
+			},
+		},
+		{
+			orderNumber:     "ECO-SEED-0002",
+			status:          models.OrderStatusPaid,
+			deliveryAddress: "Milimani, Kisumu",
+			daysAgo:         1,
+			items: []struct {
+				productID string
+				qty       int
+			}{
+				{productIDs["EcoRoute Organic Compost 10kg"], 2},
+			},
+		},
+	}
+	for _, o := range orders {
+		if err := seedOrder(ctx, pool, communityID, sellerID, o.orderNumber, o.status, o.deliveryAddress, o.daysAgo, o.items); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func seedSellerProfile(ctx context.Context, pool *pgxpool.Pool, userID string) (string, error) {
+	var id string
+	err := pool.QueryRow(ctx, `SELECT id FROM seller_profiles WHERE user_id = $1`, userID).Scan(&id)
+	if err == nil {
+		return id, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return "", err
+	}
+	err = pool.QueryRow(ctx,
+		`INSERT INTO seller_profiles (user_id, name, description, contact_phone, location, verified)
+		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+		userID, "GreenHome Kenya", "We turn recovered EcoRoute materials into furniture and home goods for the Kisumu community.", "0700 123 456", "Kisumu, Kenya", true).Scan(&id)
+	return id, err
+}
+
+func materialBatchID(ctx context.Context, pool *pgxpool.Pool, sourceType, material string) (string, error) {
+	var id string
+	err := pool.QueryRow(ctx,
+		`SELECT id FROM material_processing WHERE source_type = $1 AND material = $2 ORDER BY created_at DESC LIMIT 1`,
+		sourceType, material).Scan(&id)
+	return id, err
+}
+
+func seedProduct(ctx context.Context, pool *pgxpool.Pool, sellerID, name, category string, price float64, stock int, batchID string, recycledPercent int, wasteRecoveredKg float64) (string, error) {
+	slug := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(name), " ", "-"))
+	var id string
+	err := pool.QueryRow(ctx, `SELECT id FROM products WHERE slug = $1`, slug).Scan(&id)
+	if err == nil {
+		return id, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return "", err
+	}
+	err = pool.QueryRow(ctx,
+		`INSERT INTO products
+		   (seller_id, name, slug, description, category, price, stock, material_batch_id, recycled_percent, waste_recovered_kg, unit, is_active)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'unit', TRUE)
+		 RETURNING id`,
+		sellerID, name, slug, "Crafted by GreenHome Kenya from material recovered through the EcoRoute recycling pipeline.", category, price, stock, batchID, recycledPercent, wasteRecoveredKg).Scan(&id)
+	return id, err
+}
+
+func seedReview(ctx context.Context, pool *pgxpool.Pool, productID, userID string, rating int, comment string) error {
+	var exists bool
+	if err := pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM product_reviews WHERE product_id = $1 AND user_id = $2)`,
+		productID, userID).Scan(&exists); err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	_, err := pool.Exec(ctx,
+		`INSERT INTO product_reviews (product_id, user_id, rating, comment) VALUES ($1, $2, $3, $4)`,
+		productID, userID, rating, comment)
+	return err
+}
+
+func seedOrder(ctx context.Context, pool *pgxpool.Pool, userID, sellerID, orderNumber, status, address string, daysAgo int, items []struct {
+	productID string
+	qty       int
+}) error {
+	var exists bool
+	if err := pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM orders WHERE order_number = $1)`, orderNumber).Scan(&exists); err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	var subtotal float64
+	type item struct {
+		productID string
+		name      string
+		price     float64
+		wasteKg   float64
+		qty       int
+	}
+	rows := []item{}
+	for _, it := range items {
+		var name string
+		var price, wasteKg float64
+		if err := tx.QueryRow(ctx,
+			`SELECT name, price::float8, waste_recovered_kg::float8 FROM products WHERE id = $1`,
+			it.productID).Scan(&name, &price, &wasteKg); err != nil {
+			return err
+		}
+		rows = append(rows, item{it.productID, name, price, wasteKg, it.qty})
+		subtotal += price * float64(it.qty)
+	}
+	total := subtotal + 150.0
+
+	var orderID string
+	if err := tx.QueryRow(ctx,
+		`INSERT INTO orders (user_id, order_number, status, subtotal, delivery_fee, total, payment_method, delivery_address, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, 'mpesa', $7, $8, $8)
+		 RETURNING id`,
+		userID, orderNumber, status, subtotal, 150.0, total, address, time.Now().AddDate(0, 0, -daysAgo)).Scan(&orderID); err != nil {
+		return err
+	}
+
+	for _, it := range rows {
+		line := it.price * float64(it.qty)
+		fee := line * models.EcoRouteCommission
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO order_items
+			   (order_id, product_id, seller_id, product_name, unit_price, quantity, line_total, ecoroute_fee, seller_share, waste_recovered_kg)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+			orderID, it.productID, sellerID, it.name, it.price, it.qty, line, fee, line-fee, it.wasteKg*float64(it.qty)); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx,
+			`UPDATE products SET stock = stock - $2, updated_at = now() WHERE id = $1`, it.productID, it.qty); err != nil {
+			return err
+		}
+	}
+
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO payments (order_id, amount, method, status, reference)
+		 VALUES ($1, $2, 'mpesa', 'paid', $3)`,
+		orderID, total, "PAY-SEED-"+orderNumber); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }

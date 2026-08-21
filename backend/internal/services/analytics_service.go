@@ -14,10 +14,15 @@ const co2KgPerLitreFuel = 2.68
 type AnalyticsService struct {
 	pool      *pgxpool.Pool
 	recycling *repositories.RecyclingRepository
+	processing *repositories.MaterialProcessingRepository
 }
 
 func NewAnalyticsService(pool *pgxpool.Pool) *AnalyticsService {
-	return &AnalyticsService{pool: pool, recycling: repositories.NewRecyclingRepository(pool)}
+	return &AnalyticsService{
+		pool:       pool,
+		recycling:  repositories.NewRecyclingRepository(pool),
+		processing: repositories.NewMaterialProcessingRepository(pool),
+	}
 }
 
 func (s *AnalyticsService) Summary(ctx context.Context) (*models.AnalyticsSummary, error) {
@@ -58,6 +63,11 @@ func (s *AnalyticsService) Summary(ctx context.Context) (*models.AnalyticsSummar
 	summary.LandfillDivertedKg = recycledKg
 	summary.FuelSavedL = summary.DistanceSavedKm * fuelLPerKm
 	summary.CO2AvoidedKg = summary.FuelSavedL*co2KgPerLitreFuel + recyclingCO2
+
+	summary.RecycledMaterialValue, err = s.processing.MaterialValue(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	return summary, nil
 }

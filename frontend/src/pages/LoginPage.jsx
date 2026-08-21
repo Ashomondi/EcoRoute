@@ -116,6 +116,9 @@ export default function LoginPage() {
         <p className="auth-footer">
           Don&apos;t have an account? <Link to="/signup">Create one</Link>
         </p>
+        <p className="auth-footer">
+          City operator? <Link to="/admin/login">Sign in to the Admin Console</Link>
+        </p>
       </div>
     </div>
   )

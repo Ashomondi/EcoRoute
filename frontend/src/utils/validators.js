@@ -78,6 +78,25 @@ export function validateSignup(input) {
   return ''
 }
 
+export function validateInviteCode(value) {
+  return required(value, 'Invite code')
+}
+
+export function validateAdminSignup(input) {
+  for (const err of [
+    validateName(input?.name),
+    validateEmail(input?.email),
+    validatePassword(input?.password),
+    validatePasswordMatch(input?.password, input?.confirm),
+    validateInviteCode(input?.inviteCode),
+  ]) {
+    if (err) {
+      return err
+    }
+  }
+  return ''
+}
+
 export function validateWastePoint(input) {
   for (const err of [
     required(input?.name, 'Name'),

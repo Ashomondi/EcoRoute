@@ -9,6 +9,7 @@ import {
 } from 'react'
 import {
   login as apiLogin,
+  adminLogin as apiAdminLogin,
   register as apiRegister,
   logout as apiLogout,
 } from '../services/authService'
@@ -50,6 +51,15 @@ export function AuthProvider({ children }) {
     [persist],
   )
 
+  const adminLogin = useCallback(
+    async (email, password) => {
+      const u = await apiAdminLogin(email, password)
+      persist(u)
+      return u
+    },
+    [persist],
+  )
+
   const register = useCallback(
     async (input) => {
       const u = await apiRegister(input)
@@ -65,8 +75,8 @@ export function AuthProvider({ children }) {
   }, [persist])
 
   const value = useMemo(
-    () => ({ user, login, register, logout }),
-    [user, login, register, logout],
+    () => ({ user, login, adminLogin, register, logout }),
+    [user, login, adminLogin, register, logout],
   )
 
   return createElement(AuthContext.Provider, { value }, children)

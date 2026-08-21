@@ -2684,3 +2684,53 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============ Smart bins ============ */
+.smart-bin-reading {
+  background: var(--primary-soft);
+  border: 1px solid rgba(15, 118, 110, 0.2);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+.smart-bin-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.smart-bin-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.smart-bin-bar-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+}
+.smart-bin-track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.smart-bin-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gradient);
+}
+.smart-bin-steps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.smart-bin-steps li {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.smart-bin-steps strong {
+  color: var(--text);
+}

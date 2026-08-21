@@ -82,3 +82,31 @@ export const ORDER_STATUS_LABELS = {
   delivered: 'Delivered',
   cancelled: 'Cancelled',
 }
+
+export const BIN_CATEGORIES = [
+  { slug: 'plastic', label: 'Plastic', emoji: '♻️' },
+  { slug: 'paper', label: 'Paper & Cardboard', emoji: '📦' },
+  { slug: 'glass', label: 'Glass', emoji: '🍾' },
+  { slug: 'organic', label: 'Organic / Compost', emoji: '🌱' },
+  { slug: 'metal', label: 'Metal', emoji: '🔩' },
+  { slug: 'textile', label: 'Textile', emoji: '👕' },
+  { slug: 'e_waste', label: 'E-waste', emoji: '🔌' },
+  { slug: 'other', label: 'Mixed / Other', emoji: '🗑️' },
+]
+
+export const READ_TRIGGER_LABELS = {
+  manual: 'Manual',
+  full: 'Full sensor',
+  scheduled: 'Scheduled',
+}
+
+export const READING_STATUS_LABELS = {
+  pending: 'Pending',
+  collected: 'Collected',
+  cleared: 'Cleared',
+}
+
+export const KISUMU_CENTER = { lat: -0.1022, lng: 34.7617 }
+
+export const TOKEN_KEY = 'ecoroute_token'
+export const USER_KEY = 'ecoroute_user'

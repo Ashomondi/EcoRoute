@@ -13,6 +13,7 @@ import CollectionSchedule from './pages/community/CollectionSchedule'
 import RecycleWaste from './pages/community/RecycleWaste'
 import Dashboard from './pages/admin/Dashboard'
 import WastePoints from './pages/admin/WastePoints'
+import SmartBins from './pages/admin/SmartBins'
 import Trucks from './pages/admin/Trucks'
 import RoutesPage from './pages/admin/Routes'
 import Reports from './pages/admin/Reports'
@@ -65,6 +66,7 @@ export default function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="waste-points" element={<WastePoints />} />
+            <Route path="smart-bins" element={<SmartBins />} />
             <Route path="trucks" element={<Trucks />} />
             <Route path="routes" element={<RoutesPage />} />
             <Route path="reports" element={<Reports />} />

@@ -226,6 +226,70 @@ The resident's upcoming scheduled collections and recent collection history for 
 
 `upcoming` are the next scheduled collections (deduped per waste point) from `planned`/`active` routes, ordered with points the resident reported on (`related`) first, then by urgency. `past` is the recent collection history ordered newest first.
 
+## Recycling
+
+Roles: view/record = any authenticated; recycler management + city-wide impact = admin.
+
+### `GET /recycling/waste-types`
+Full taxonomy with recycling guide content (benefits, process, products) and preparation steps per type. `200` → array of WasteType:
+
+```json
+{
+  "slug": "plastic", "name": "Plastic", "recyclable": true,
+  "co2_per_kg": 1.6, "energy_kwh_per_kg": 2.0,
+  "preparation": ["Check the resin code and rinse containers clean", "..."],
+  "guide": { "benefits": ["..."], "process": ["..."], "products": ["..."] },
+  "sort_order": 2
+}
+```
+
+### `GET /recycling/recyclers?lat=&lng=&radius_km=&type=`
+Nearby recyclers, sorted by distance. Without `lat`/`lng`, returns all ordered by name. Optional `type` adds an `accepts_type` boolean. `200` → array:
+
+```json
+{
+  "id": "uuid", "name": "Lake Basin Recycling Centre", "address": "...",
+  "phone": "", "website": "", "latitude": -0.104, "longitude": 34.744,
+  "accepted_types": ["plastic", "paper", "metal", "glass"],
+  "status": "active", "created_at": "2026-08-20T12:00:00Z",
+  "distance_km": 1.2, "accepts_type": true
+}
+```
+
+### `POST /recycling/recyclers`
+Admin. `{ "name", "address"?, "phone"?, "website"?, "latitude", "longitude", "accepted_types"?, "status"? }` → `201`.
+
+### `PUT /recycling/recyclers/{id}`
+Admin. Full update, same body as create → `200`.
+
+### `DELETE /recycling/recyclers/{id}`
+Admin. → `204`.
+
+### `POST /recycling/records`
+Any authenticated user. `{ "waste_type", "estimated_kg", "recycler_id"?, "photo_url"? }` → `201`. `waste_type` must exist and be recyclable; `estimated_kg` in (0, 1000].
+
+### `GET /recycling/records`
+Admin. All recycling records, newest first.
+
+### `GET /recycling/records/mine`
+The caller's recycling records.
+
+### `GET /recycling/impact`
+The caller's recycling impact:
+
+```json
+{
+  "total_kg": 5, "items_recycled": 2, "co2_saved_kg": 5.9,
+  "energy_saved_kwh": 11.2, "landfill_diverted_kg": 5,
+  "by_type": [
+    { "slug": "paper", "name": "Paper & Cardboard", "count": 1, "kg": 3, "co2_saved_kg": 2.7, "energy_saved_kwh": 7.2 }
+  ]
+}
+```
+
+### `GET /recycling/impact/total`
+Admin. City-wide recycling impact (same shape as above).
+
 ## System
 
 ### `GET /health`

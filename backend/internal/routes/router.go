@@ -36,6 +36,7 @@ func NewRouter(deps *Deps) *Router {
 	RegisterAnalytics(r)
 	RegisterCommunity(r)
 	RegisterUploads(r)
+	RegisterRecycling(r)
 
 	if deps.Config.UploadDir != "" && deps.Config.UploadURL != "" {
 		fs := http.StripPrefix(deps.Config.UploadURL, http.FileServer(http.Dir(deps.Config.UploadDir)))

@@ -1,122 +1,66 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import AuthLayout from './layouts/AuthLayout'
+import RootLayout from './layouts/RootLayout'
+import AdminAuthLayout from './layouts/AdminAuthLayout'
+import AdminLayout from './layouts/AdminLayout'
+import CommunityLayout from './layouts/CommunityLayout'
+import DriverLayout from './layouts/DriverLayout'
+import LandingPage from './pages/LandingPage'
+import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminSignup from './pages/admin/AdminSignup'
+import Dashboard from './pages/admin/Dashboard'
+import WastePoints from './pages/admin/WastePoints'
+import Trucks from './pages/admin/Trucks'
+import RoutesPage from './pages/admin/Routes'
+import Reports from './pages/admin/Reports'
+import Analytics from './pages/admin/Analytics'
+import CommunityDashboard from './pages/community/CommunityDashboard'
+import ReportWaste from './pages/community/ReportWaste'
+import CollectionSchedule from './pages/community/CollectionSchedule'
+import DriverDashboard from './pages/driver/DriverDashboard'
+import MyRoute from './pages/driver/MyRoute'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Routes>
+      <Route element={<RootLayout />}>
+        <Route path="/" element={<LandingPage />} />
 
-      <div className="ticks"></div>
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+        </Route>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <Route element={<AdminAuthLayout />}>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/signup" element={<AdminSignup />} />
+        </Route>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="waste-points" element={<WastePoints />} />
+          <Route path="trucks" element={<Trucks />} />
+          <Route path="routes" element={<RoutesPage />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="analytics" element={<Analytics />} />
+        </Route>
+
+        <Route path="/community" element={<CommunityLayout />}>
+          <Route index element={<CommunityDashboard />} />
+          <Route path="report" element={<ReportWaste />} />
+          <Route path="schedule" element={<CollectionSchedule />} />
+        </Route>
+
+        <Route path="/driver" element={<DriverLayout />}>
+          <Route index element={<DriverDashboard />} />
+          <Route path="my-route" element={<MyRoute />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Route>
+    </Routes>
   )
 }
-
-export default App

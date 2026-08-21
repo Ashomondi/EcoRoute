@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""EcoRoute AI prediction service — /predict contract.
+
+Thin, stateless HTTP layer that the Go backend (waste_service.go) calls for
+waste-level forecasting. Prediction logic lives in predictor.py; the model is
+trained offline by data/train.py. Runs on stdlib only.
+
+Usage:
+    python3 ai/services/api.py
+    (defaults to 0.0.0.0:8000)
+"""
+
+import json
+import os
+import sys
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from predictor import predict  # noqa: E402
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        if self.path != "/predict":
+            self.send_response(404)
+            self.end_headers()
+            return
+
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            payload = json.loads(self.rfile.read(length) or b"{}")
+            result = predict(
+                int(payload.get("current_level_pct", 0)),
+                int(payload.get("days_since_last_collection", 1)),
+            )
+            body = json.dumps(result).encode()
+            status = 200
+        except (ValueError, TypeError):
+            body = json.dumps({"error": "invalid payload"}).encode()
+            status = 400
+
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args):
+        pass
+
+
+def create_server(host="0.0.0.0", port=8000):
+    return HTTPServer((host, port), Handler)
+
+
+if __name__ == "__main__":
+    print("ai service listening on :8000")
+    create_server().serve_forever()

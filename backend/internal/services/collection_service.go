@@ -15,10 +15,11 @@ type CollectionService struct {
 	collection *repositories.CollectionRepository
 	trucks     *repositories.TruckRepository
 	waste      *repositories.WasteRepository
+	bins       *repositories.SmartBinRepository
 }
 
-func NewCollectionService(collection *repositories.CollectionRepository, trucks *repositories.TruckRepository, waste *repositories.WasteRepository) *CollectionService {
-	return &CollectionService{collection: collection, trucks: trucks, waste: waste}
+func NewCollectionService(collection *repositories.CollectionRepository, trucks *repositories.TruckRepository, waste *repositories.WasteRepository, bins *repositories.SmartBinRepository) *CollectionService {
+	return &CollectionService{collection: collection, trucks: trucks, waste: waste, bins: bins}
 }
 
 func (s *CollectionService) ListForUser(ctx context.Context, userID, role string) ([]models.CollectionRecord, error) {
@@ -100,18 +101,31 @@ func (s *CollectionService) MarkCollected(ctx context.Context, userID, role, was
 		return nil, fmt.Errorf("%w: waste point is not on this route", ErrValidation)
 	}
 
+	estimatedKg := kgPerLevelPct * float64(wp.CurrentLevelPct)
+	reading, err := s.bins.LatestPendingByBin(ctx, wastePointID)
+	if err != nil {
+		return nil, err
+	}
+	if reading != nil {
+		estimatedKg = reading.TotalKg
+	}
+
 	rec := &models.CollectionRecord{
 		RouteID:      routeID,
 		WastePointID: wastePointID,
 		TruckID:      truckID,
 		Outcome:      outcome,
-		EstimatedKg:  kgPerLevelPct * float64(wp.CurrentLevelPct),
+		EstimatedKg:  estimatedKg,
 	}
 	if err := s.collection.Create(ctx, rec); err != nil {
 		return nil, err
 	}
 
 	if outcome == models.OutcomeCollected {
+		// Smart bins: resolve the AI reading into recycling material batches.
+		if err := s.bins.ResolveOnCollection(ctx, wastePointID, rec.ID); err != nil {
+			return nil, err
+		}
 		if err := s.waste.ResetCollected(ctx, wastePointID); err != nil {
 			return nil, err
 		}

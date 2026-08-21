@@ -10,7 +10,8 @@ import (
 	"ecoroute/backend/internal/models"
 )
 
-const wastePointCols = `id, name, latitude, longitude, current_level_pct, status, last_collected_at, created_at`
+const wastePointCols = `id, name, latitude, longitude, current_level_pct, status, last_collected_at, created_at,
+	COALESCE(category, '') AS category, COALESCE(max_capacity_kg, 0) AS max_capacity_kg, COALESCE(current_estimated_kg, 0) AS current_estimated_kg`
 
 type WasteRepository struct {
 	pool *pgxpool.Pool
@@ -22,10 +23,10 @@ func NewWasteRepository(pool *pgxpool.Pool) *WasteRepository {
 
 func (r *WasteRepository) Create(ctx context.Context, wp *models.WastePoint) error {
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO waste_points (name, latitude, longitude, current_level_pct, status)
-		 VALUES ($1, $2, $3, $4, $5)
+		`INSERT INTO waste_points (name, latitude, longitude, current_level_pct, status, category, max_capacity_kg)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 RETURNING id, created_at`,
-		wp.Name, wp.Latitude, wp.Longitude, wp.CurrentLevelPct, wp.Status,
+		wp.Name, wp.Latitude, wp.Longitude, wp.CurrentLevelPct, wp.Status, wp.Category, wp.MaxCapacityKg,
 	).Scan(&wp.ID, &wp.CreatedAt)
 }
 
@@ -77,7 +78,9 @@ func (r *WasteRepository) GetMany(ctx context.Context, ids []string) (map[string
 
 func (r *WasteRepository) ResetCollected(ctx context.Context, id string) error {
 	_, err := r.pool.Exec(ctx,
-		`UPDATE waste_points SET current_level_pct = 0, status = $1, last_collected_at = now() WHERE id = $2`,
+		`UPDATE waste_points
+		 SET current_level_pct = 0, status = $1, last_collected_at = now(), current_estimated_kg = 0
+		 WHERE id = $2`,
 		models.StatusOK, id)
 	return err
 }
@@ -92,10 +95,11 @@ func (r *WasteRepository) EscalatePriority(ctx context.Context, id string) error
 func (r *WasteRepository) Update(ctx context.Context, wp *models.WastePoint) (*models.WastePoint, error) {
 	return scanWastePoint(r.pool.QueryRow(ctx,
 		`UPDATE waste_points
-		 SET name = $2, latitude = $3, longitude = $4, current_level_pct = $5, status = $6
+		 SET name = $2, latitude = $3, longitude = $4, current_level_pct = $5, status = $6,
+		     category = $7, max_capacity_kg = $8
 		 WHERE id = $1
 		 RETURNING `+wastePointCols,
-		wp.ID, wp.Name, wp.Latitude, wp.Longitude, wp.CurrentLevelPct, wp.Status))
+		wp.ID, wp.Name, wp.Latitude, wp.Longitude, wp.CurrentLevelPct, wp.Status, wp.Category, wp.MaxCapacityKg))
 }
 
 func (r *WasteRepository) Delete(ctx context.Context, id string) error {
@@ -105,7 +109,8 @@ func (r *WasteRepository) Delete(ctx context.Context, id string) error {
 
 func scanWastePoint(row pgx.Row) (*models.WastePoint, error) {
 	wp := &models.WastePoint{}
-	err := row.Scan(&wp.ID, &wp.Name, &wp.Latitude, &wp.Longitude, &wp.CurrentLevelPct, &wp.Status, &wp.LastCollectedAt, &wp.CreatedAt)
+	err := row.Scan(&wp.ID, &wp.Name, &wp.Latitude, &wp.Longitude, &wp.CurrentLevelPct, &wp.Status, &wp.LastCollectedAt, &wp.CreatedAt,
+		&wp.Category, &wp.MaxCapacityKg, &wp.CurrentEstimatedKg)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}

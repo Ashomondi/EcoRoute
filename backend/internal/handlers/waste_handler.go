@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"ecoroute/backend/internal/models"
@@ -53,6 +54,7 @@ func (h *WasteHandler) Create(w http.ResponseWriter, r *http.Request) {
 			utils.RespondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		log.Printf("create waste point: %v", err)
 		utils.RespondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}

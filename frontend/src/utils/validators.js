@@ -19,6 +19,17 @@ export function validPassword(value) {
   return ''
 }
 
+export const validateEmail = validEmail
+export const validatePassword = validPassword
+
+export function validateSignup({ name, email, password, confirm }) {
+  return required(name) || validEmail(email) || validPassword(password) || (password !== confirm ? 'Passwords do not match' : '')
+}
+
+export function validateAdminSignup({ name, email, password, confirm, inviteCode }) {
+  return validateSignup({ name, email, password, confirm }) || required(inviteCode)
+}
+
 export function validNumber(value, { min, max, label = 'Value' } = {}) {
   const n = Number(value)
   if (value === undefined || value === null || value === '' || Number.isNaN(n)) {

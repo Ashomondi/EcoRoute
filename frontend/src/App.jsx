@@ -7,6 +7,10 @@ import DriverLayout from './layouts/DriverLayout'
 import MarketLayout from './layouts/MarketLayout'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
+import AdminAuthLayout from './layouts/AdminAuthLayout'
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminSignup from './pages/admin/AdminSignup'
 import CommunityDashboard from './pages/community/CommunityDashboard'
 import ReportWaste from './pages/community/ReportWaste'
 import CollectionSchedule from './pages/community/CollectionSchedule'
@@ -41,6 +45,12 @@ export default function App() {
               </AuthLayout>
             }
           />
+
+          <Route path="/signup" element={<AuthLayout><SignupPage /></AuthLayout>} />
+          <Route element={<AdminAuthLayout />}>
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/signup" element={<AdminSignup />} />
+          </Route>
 
           <Route
             path="/community"

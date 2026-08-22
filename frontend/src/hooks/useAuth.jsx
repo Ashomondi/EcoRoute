@@ -36,6 +36,17 @@ export function AuthProvider({ children }) {
     return result.user
   }
 
+  const adminLogin = async (email, password) => {
+    const result = await authService.loginAdmin({ email, password })
+    if (!result?.token || !result?.user) {
+      throw new ApiError('The server returned an invalid login response', 502)
+    }
+    setToken(result.token)
+    setStoredUser(result.user)
+    setUser(result.user)
+    return result.user
+  }
+
   const logout = () => {
     setToken(null)
     setStoredUser(null)
@@ -47,6 +58,7 @@ export function AuthProvider({ children }) {
       user,
       login,
       register,
+      adminLogin,
       logout,
       isAuthenticated: Boolean(user),
       isAdmin: user?.role === ROLES.ADMIN,

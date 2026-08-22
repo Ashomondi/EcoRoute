@@ -92,7 +92,10 @@ export default function LoginPage() {
       </div>
 
       <p className="auth-footer">
-        New resident? <Link to="/">Learn about EcoRoute</Link>
+        New resident or driver? <Link to="/signup">Create an account</Link>
+      </p>
+      <p className="auth-footer">
+        City administrator? <Link to="/admin/login">Sign in to the admin console</Link>
       </p>
     </div>
   )

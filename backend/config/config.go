@@ -45,7 +45,9 @@ func Load() (*Config, error) {
 		JWTTTL:       24 * time.Hour,
 		AIServiceURL: getEnv("AI_SERVICE_URL", "http://localhost:8000"),
 		AITimeout:    2 * time.Second,
-		AdminInvite:  os.Getenv("ADMIN_INVITE_CODE"),
+		// Keep local development consistent with docker-compose. Deployments
+		// should always override this with a private invite code.
+		AdminInvite:  getEnv("ADMIN_INVITE_CODE", "ecoroute-admin-2024"),
 
 		CORSAllowedOrigins: splitList(getEnv("CORS_ALLOWED_ORIGINS", "*")),
 		RateLimitRequests:  120,

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import heroImg from '../assets/hero.png'
+import heroImg from '../assets/smartwaste.png'
 
 const FEATURES = [
   {
@@ -121,7 +121,7 @@ export default function LandingPage() {
                     <div className="mock-kpi" />
                   </div>
                   <div className="mock-map">
-                    <img src={heroImg} className="mock-hero-img" alt="Live waste map" />
+                    <img src={heroImg} className="mock-hero-img" alt="Smart waste bin" />
                   </div>
                   <div className="mock-rows">
                     <div className="mock-row" />

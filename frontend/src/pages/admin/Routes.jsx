@@ -20,7 +20,7 @@ export default function RoutesPage() {
     const res = await optimize(selectedTruck)
     if (res) {
       setResult(res)
-      setStops(res.stops || [])
+      setStops((res.stops || []).map((stop) => stop.waste_point).filter(Boolean))
     }
   }
 

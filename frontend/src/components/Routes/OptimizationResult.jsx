@@ -17,6 +17,8 @@ function Bar({ label, baseline, optimized, baselineLabel, optimizedLabel }) {
 }
 
 export default function OptimizationResult({ result }) {
+  const fuelSaved = Number(result.fuel_saved_l || 0)
+
   return (
     <div className="card">
       <div className="card-head">
@@ -49,7 +51,7 @@ export default function OptimizationResult({ result }) {
       </div>
       <div className="landing-impact-foot">
         <span>
-          Fuel saved <strong>{result.fuel_saved_l.toFixed(1)} L</strong>
+          Fuel saved <strong>{fuelSaved.toFixed(1)} L</strong>
         </span>
         <span>
           Time saved <strong>{result.time_saved_minutes} min</strong>

@@ -40,6 +40,15 @@ Smart waste collection for cleaner cities. EcoRoute monitors waste collection po
 
 Prerequisites: Docker (with compose), Go 1.22+ (tested 1.26), Node 18+.
 
+When using Docker Compose, set `ADMIN_INVITE_CODE` before starting the backend.
+This is the invite code required by the admin registration form (the compose
+development default is `ecoroute-admin-invite`). For example:
+
+```bash
+export ADMIN_INVITE_CODE="your-secure-admin-invite"
+docker compose up -d
+```
+
 ### 1. Start the database
 
 ```bash
